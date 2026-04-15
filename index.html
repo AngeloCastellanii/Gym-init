@@ -1,19 +1,60 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Gym init - Aplicación de gestión de rutinas de ejercicio" />
-    <title>Gym init</title>
-    <link rel="stylesheet" href="css/styles.css" />
-  </head>
-  <body>
-    <app-shell></app-shell>
-    <script src="js/components/app-shell.js"></script>
-    <script src="js/views/dashboard-view.js"></script>
-    <script src="js/views/exercises-view.js"></script>
-    <script src="js/views/routines-view.js"></script>
-    <script src="js/views/sessions-view.js"></script>
-    <script src="js/app.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gym Init — Registra tu progreso de entrenamiento, crea rutinas y trackea tu fuerza. Funciona 100% offline.">
+  <title>Gym Init — Tracker de Entrenamiento</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
+
+  <!-- Hoja de estilos principal -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Iconos Phosphor via CDN -->
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+
+  <!-- Chart.js via CDN (usado en Fase 5 — Dashboard) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ============================================================
+       App Shell: Sidebar / BottomNav  +  Salida del Router
+       ============================================================ -->
+  <div id="app-shell">
+    <app-nav></app-nav>
+    <main id="app-outlet">
+      <!-- Las vistas se montan y desmontan aqui por el Router -->
+    </main>
+  </div>
+
+  <!-- ============================================================
+       Scripts — cargados en orden de dependencia
+       ============================================================ -->
+       
+  <!-- Base de datos: wrapper IndexedDB + datos semilla -->
+  <script src="js/db.js"></script>
+
+  <!-- Utilidades globales -->
+  <script src="js/utils.js"></script>
+
+  <!-- Componentes de UI reutilizables -->
+  <script src="js/components/loading-state.js"></script>
+  <script src="js/components/error-state.js"></script>
+  <script src="js/components/app-nav.js"></script>
+  <script src="js/components/confirm-dialog.js"></script>
+  <script src="js/components/exercise-modal.js"></script>
+  <script src="js/components/routine-modal.js"></script>
+
+  <!-- Vistas de la aplicacion -->
+  <script src="js/components/exercises-view.js"></script>
+  <script src="js/components/routines-view.js"></script>
+
+  <!-- Core: Router y arranque de la App -->
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
 </html>

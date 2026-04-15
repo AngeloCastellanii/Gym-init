@@ -1,0 +1,192 @@
+# Plan de Desarrollo — Gym Init SPA
+
+Una aplicación web offline-first para gestionar rutinas y registrar progreso de entrenamiento.
+
+**Stack:** HTML5 · Vanilla JS (Web Components / Custom Elements) · CSS3 (sin Tailwind, propio) · IndexedDB · LocalStorage · Chart.js CDN
+
+---
+
+## Estructura de Archivos Final
+
+```
+Proyecto 3 Gym-init/
+├── index.html
+├── css/
+│   └── styles.css          ← ya existe, se amplia
+├── js/
+│   ├── db.js               ← Wrapper IndexedDB + seed data
+│   ├── router.js           ← SPA Router hash-based
+│   ├── app.js              ← Entry point, orquestador
+│   ├── components/
+│   │   ├── app-nav.js          ← Sidebar desktop + Bottom nav mobile
+│   │   ├── dashboard-view.js   ← Vista #dashboard
+│   │   ├── exercises-view.js   ← Vista #exercises (catálogo CRUD)
+│   │   ├── exercise-modal.js   ← Modal crear/editar ejercicio
+│   │   ├── routines-view.js    ← Vista #routines (CRUD)
+│   │   ├── routine-modal.js    ← Modal crear/editar rutina
+│   │   ├── sessions-view.js    ← Vista #sessions (historial)
+│   │   ├── active-session.js   ← Vista #session/new (tracker)
+│   │   ├── confirm-dialog.js   ← Modal confirmación destructiva
+│   │   ├── loading-state.js    ← Componente spinner
+│   │   └── error-state.js      ← Componente error
+│   └── utils.js            ← Formateo de fechas, conversión Kg/Lb, etc.
+└── assets/
+    └── exercises/          ← Imágenes predefinidas por músculo
+```
+
+---
+
+## Fases de Implementación
+
+---
+
+### Fase 1 — App Shell, Navegación y Estructura Base
+**Objetivo:** Tener una página funcional con navegación responsiva y el enrutador funcional.
+
+**Archivos creados/modificados:**
+- `index.html` — HTML base, imports CDN (Phosphor Icons, Chart.js), estructura `#app-shell`
+- `css/styles.css` — Ampliar con estilos del nav (sidebar + bottom bar)
+- `js/router.js` — Router hash básico, register/navigate
+- `js/components/app-nav.js` — Custom Element `<app-nav>`, sidebar/bottom nav responsivo
+- `js/components/loading-state.js` — `<loading-state>` reutilizable
+- `js/components/error-state.js` — `<error-state>` reutilizable
+- `js/app.js` — Bootstrap: registra componentes, inicializa router
+
+**Entregas de esta fase:**
+- Sidebar izquierdo (256px) visible en ≥768px con logo "Gym init", 5 ítems de menú con iconos Phosphor
+- Bottom nav (70px, fixed) visible en <768px con íconos + texto pequeño
+- Estado activo del nav resaltado en azul al 10% con texto blue-400
+- Router funcional que monta/desmonta placeholder en `#app-outlet` sin recargar
+- Placeholder de vista para cada ruta: `#dashboard`, `#exercises`, `#routines`, `#sessions`, `#session/new`
+
+---
+
+### Fase 2 — Motor IndexedDB + Seed Data
+**Objetivo:** Capa de datos completa con operaciones CRUD y datos semilla matemáticos.
+
+**Archivos creados:**
+- `js/db.js` — Clase `GymDB` con métodos CRUD para los 3 stores
+- `js/utils.js` — Helpers: formatFecha, convertWeight, calcVolume
+
+**Stores en IndexedDB (versión 1):**
+- `exercises` — `{id, name, muscleGroup, type, description, image}`
+- `routines` — `{id, name, description, exercises: [{exerciseId, order, sets, reps}], createdAt}`
+- `sessions` — `{id, date, routineId, duration, logs: [{exerciseId, sets: [{weight, reps, done}]}]}`
+
+**Seed automático (si DB vacía):**
+- 10+ ejercicios predefinidos (Press banca, Sentadilla, Peso muerto, Press militar, Curl bíceps, etc.)
+- 2 rutinas base ("Torso" y "Tren inferior")
+- 15 sesiones históricas simuladas en fechas de los últimos 30 días con volúmenes variados para alimentar Chart.js
+
+---
+
+### Fase 3 — Catálogo de Ejercicios y Rutinas (CRUD)
+**Objetivo:** Vistas funcionales de ejercicios y rutinas con modales CRUD.
+
+**Archivos creados:**
+- `js/components/exercises-view.js` — Grid de tarjetas glass con búsqueda/filtro
+- `js/components/exercise-modal.js` — Modal crear/editar con selector de imagen predefinida
+- `js/components/routines-view.js` — Grid de tarjetas glass con botones Iniciar/Editar/Borrar
+- `js/components/routine-modal.js` — Modal con selector multi-ejercicio, sets/reps por ejercicio
+- `js/components/confirm-dialog.js` — Modal de confirmación reutilizable con advertencia de impacto
+
+**Features:**
+- Tarjetas de ejercicio con imagen, badge muscular, badge tipo, botones editar/borrar
+- Tarjeta de ejercicio tiene opción de subir/seleccionar foto dentro de la tarjeta
+- Tarjetas de rutina con decoración círculo azul 10% en esquina
+- Advertencia al borrar ejercicio que pertenece a rutina activa
+- Filtro por grupo muscular + búsqueda en tiempo real
+
+---
+
+### Fase 4 — Tracker de Sesión Activa
+**Objetivo:** Vista `#session/new` completamente funcional.
+
+**Archivos creados:**
+- `js/components/active-session.js` — Custom Element con 2 estados: Setup y Tracker
+
+**Features:**
+- Estado 1 Setup: Modal centrado con select de rutina + botón "INICIAR SESIÓN" verde
+- Estado 2 Tracker: barra superior sticky + cronómetro en verde neón + botón "Terminar"
+- Por cada ejercicio: tabla con columnas SET / CARGA / REPS / HECHO
+- Inputs grandes en fondo slate-950 con sufijos "Kg" / "reps"
+- Botón check cuadrado que marca la serie como completada (verde con glow)
+- Fila verde translúcida al marcar una serie como done
+- Botón "+ Añadir Serie" con borde punteado al pie de cada ejercicio
+- Al terminar: guarda sesión en IndexedDB, redirige a `#sessions`
+
+---
+
+### Fase 5 — Dashboard Interactivo con Chart.js
+**Objetivo:** Vista Dashboard con KPIs y mínimo 4 gráficos dinámicos.
+
+**Archivos creados:**
+- `js/components/dashboard-view.js` — Vista completa del dashboard
+
+**KPIs (4 tarjetas glass):**
+- Total Sesiones (azul), Racha Actual (esmeralda), Vol. Total Kg (naranja), Ejercicios (púrpura)
+
+**Gráficos Chart.js (4 mínimo):**
+1. **Frecuencia semanal** — Barras, sesiones por semana del mes
+2. **Progreso de fuerza** — Líneas, peso máximo en ejercicio seleccionable
+3. **Distribución muscular** — Dona, % por grupo muscular del mes
+4. **Volumen total** — Líneas, evolución de vol. total semana a semana
+
+**Features:**
+- Toggle Kg/Lb que actualiza todos los gráficos en tiempo real (guardado en LocalStorage)
+- Selector de ejercicio para gráfico de progreso
+- Sesiones recientes (últimas 5) en lista
+
+---
+
+### Fase 6 — Historial de Sesiones + QA y Pulido Final
+**Objetivo:** Vista sessions + refinamiento visual + pruebas.
+
+**Archivos creados:**
+- `js/components/sessions-view.js` — Vista historial
+
+**Features historial:**
+- Contenedor glass grande con sesiones separadas por líneas
+- Ítem: cuadrado de fecha con día (MIE) en gris + número en azul eléctrico
+- Info: nombre rutina + hora + volumen total
+- Borrar sesión (con confirmación)
+- Vista detalle sesión `#session/:id`
+
+**QA y pulido:**
+- Verificar persistencia tras recarga
+- Confirmar flujos de borrado con advertencia
+- Animaciones fadeIn/slideUp en todas las vistas
+- Estados vacíos (`<empty-state>`) cuando no hay datos
+- Responsive en móvil verificado
+- Scrollbar personalizada visible en área de contenido
+
+---
+
+## Paleta de Colores Implementada
+
+| Token CSS | Valor | Uso |
+|-----------|-------|-----|
+| `--bg-base` | `#020617` | Fondo principal (Slate 950) |
+| `--bg-panel` | `#0f172a` | Sidebar, paneles (Slate 900) |
+| `--bg-card` | `#1e293b` | Tarjetas (Slate 800) |
+| `--accent` | `#2563eb` | Azul primario (Blue 600) |
+| `--accent-light` | `#3b82f6` | Azul hover (Blue 500) |
+| `--success` | `#059669` | Éxito/Iniciar (Emerald 600) |
+| `--danger` | `#dc2626` | Peligro/Borrar (Red 600) |
+| `--glass-bg` | `rgba(30,41,59,0.72)` | Glassmorphism |
+
+> [!IMPORTANT]
+> El `css/styles.css` ya está creado con todos los tokens de diseño. La Fase 1 lo amplía con los estilos del nav.
+
+---
+
+## Verificación por Fase
+
+| Fase | Criterio de Éxito |
+|------|-------------------|
+| 1 | Nav visible, router funciona, vistas placeholder |
+| 2 | Seed insertado en DB, CRUD básico sin UI |
+| 3 | CRUD ejercicios y rutinas completo con persistencia |
+| 4 | Sesión iniciada, series registradas, guardada en DB |
+| 5 | 4 gráficos Charts.js cargados con datos reales de DB |
+| 6 | App completa funcional, pasa los 6 escenarios de prueba del documento |
