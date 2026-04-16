@@ -1,224 +1,103 @@
-﻿/**
- *  Utils.js â€” Funciones utilitarias globales para Gym Init
- *  Formato, conversion de unidades, helpers de fecha y
- *  calculos matematicos usados en todas las vistas.
-
-
-//  CONVERSION DE UNIDADES (Kg <-> Lb)
-
-
-const KG_TO_LB = 2.20462;
-
 /**
- * Obtiene la unidad de peso actual desde LocalStorage.
- * @returns {'kg'|'lb'}
+ * ============================================================
+ *  Funciones Globales de Ayuda (Utils) — Versión Completa
+ * ============================================================
  */
-function getWeightUnit() {
-  return localStorage.getItem('Gym-Init-unit') || 'kg';
+
+// --- Constantes Globales ---
+const MUSCLE_GROUPS = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Biceps', 'Triceps', 'Core', 'Cardio'];
+
+// --- Herramientas de Interfaz (UI Helpers) ---
+/** Retorna valor fallback si el dato es nulo */
+function fallback(val, def = '') {
+  return (val === undefined || val === null || val === '') ? def : val;
 }
 
-/**
- * Guarda la unidad de peso en LocalStorage.
- * @param {'kg'|'lb'} unit
- */
+/** Genera el HTML de un Badge con color segun musculo */
+function muscleBadge(muscle) {
+  const color = getMuscleColor(muscle);
+  return `
+    <span class="badge" style="color:${color}; border-color:${color}33; background:${color}1a;">
+      ${muscle}
+    </span>
+  `;
+}
+
+// --- Gestion de Unidades de Peso ---
+let currentUnit = localStorage.getItem('gym-unit') || 'kg';
+
+function getWeightUnit() { return currentUnit; }
 function setWeightUnit(unit) {
-  localStorage.setItem('Gym-Init-unit', unit);
+  currentUnit = unit;
+  localStorage.setItem('gym-unit', unit);
 }
+function unitLabel() { return currentUnit === 'kg' ? 'Kg' : 'Lb'; }
 
-/**
- * Convierte un valor de peso a la unidad actualmente seleccionada.
- * Los valores se almacenan internamente en Kg; esto convierte para mostrar.
- * @param {number} kg - Peso en kilogramos
- * @returns {number} Valor convertido (redondeado a 1 decimal)
- */
-function displayWeight(kg) {
-  if (getWeightUnit() === 'lb') {
-    return Math.round(kg * KG_TO_LB * 10) / 10;
+function displayWeight(val) {
+  if (currentUnit === 'lb') {
+    return Math.round(val * 2.20462);
   }
-  return Math.round(kg * 10) / 10;
+  return Math.round(val);
 }
 
-/**
- * Obtiene la etiqueta de unidad para mostrar en pantalla.
- * @returns {string} 'Kg' o 'Lb'
- */
-function unitLabel() {
-  return getWeightUnit() === 'lb' ? 'Lb' : 'Kg';
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  FORMATO DE FECHAS
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-const DAY_NAMES_SHORT = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
-const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
-/**
- * Formatea una fecha a cadena amigable: "Mie 24 Abril, 14:30"
- * @param {Date|string|number} date
- * @returns {string}
- */
-function formatDate(date) {
-  const d = new Date(date);
-  const day = DAY_NAMES_SHORT[d.getDay()];
-  const num = d.getDate();
-  const month = MONTH_NAMES[d.getMonth()];
-  const hours = String(d.getHours()).padStart(2, '0');
-  const mins = String(d.getMinutes()).padStart(2, '0');
-  return `${day} ${num} ${month}, ${hours}:${mins}`;
-}
-
-/**
- * Formatea una fecha en forma corta: "24 Abr"
- * @param {Date|string|number} date
- * @returns {string}
- */
-function formatDateShort(date) {
-  const d = new Date(date);
-  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`;
-}
-
-/**
- * Obtiene el dia de la semana y numero de dia para vista de calendario.
- * @param {Date|string|number} date
- * @returns {{ dayName: string, dayNum: number }}
- */
-function getCalendarDay(date) {
-  const d = new Date(date);
-  return {
-    dayName: DAY_NAMES_SHORT[d.getDay()],
-    dayNum: d.getDate()
-  };
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  FORMATO DE DURACION
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-/**
- * Formatea milisegundos a cadena MM:SS o HH:MM:SS.
- * @param {number} ms - Duracion en milisegundos
- * @returns {string}
- */
-function formatDuration(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const hrs = Math.floor(totalSec / 3600);
-  const mins = Math.floor((totalSec % 3600) / 60);
-  const secs = totalSec % 60;
-
-  if (hrs > 0) {
-    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  CALCULO DE VOLUMEN
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-/**
- * Calcula el volumen total de los registros de una sesion.
- * Volumen = Suma de (peso x reps) de cada serie completada.
- * @param {Array} logs - Array de logs de sesion
- * @returns {number} Volumen total en Kg
- */
+// --- Calculos de Entrenamiento ---
 function calcTotalVolume(logs) {
-  let total = 0;
-  for (const log of logs) {
-    for (const set of (log.sets || [])) {
-      if (set.done) {
-        total += (set.weight || 0) * (set.reps || 0);
-      }
-    }
-  }
-  return total;
+  if (!logs) return 0;
+  return logs.reduce((total, exLog) => {
+    const exVolume = exLog.sets.reduce((setSum, s) => {
+      if (s.done) return setSum + (Number(s.weight) * Number(s.reps));
+      return setSum;
+    }, 0);
+    return total + exVolume;
+  }, 0);
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  HELPERS GENERALES
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-/**
- * Genera un ID unico corto (para registros en IndexedDB).
- * @returns {string}
- */
-function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-}
-
-/**
- * Devuelve un valor de respaldo cuando el valor esta vacio/null/undefined.
- * @param {*} value
- * @param {string} fb - Valor de respaldo
- * @returns {string}
- */
-function fallback(value, fb = 'Sin descripcion') {
-  if (value === null || value === undefined || String(value).trim() === '') {
-    return fb;
-  }
-  return value;
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  COLORES E ICONOS POR GRUPO MUSCULAR
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-/** Mapa de colores por grupo muscular (para badges y acentos) */
-const MUSCLE_COLORS = {
-  'Pecho': '#f87171',
-  'Espalda': '#60a5fa',
-  'Piernas': '#34d399',
-  'Hombros': '#fbbf24',
-  'Biceps': '#a78bfa',
-  'Triceps': '#f472b6',
-  'Core': '#fb923c',
-  'Otro': '#94a3b8'
-};
-
-/**
- * Obtiene el color de acento para un grupo muscular.
- * @param {string} muscleGroup
- * @returns {string} Color en hex
- */
-function getMuscleColor(muscleGroup) {
-  return MUSCLE_COLORS[muscleGroup] || '#94a3b8';
-}
-
-/**
- * Genera el HTML de un badge para un grupo muscular.
- * @param {string} muscleGroup
- * @returns {string} Cadena HTML
- */
-function muscleBadge(muscleGroup) {
-  const color = getMuscleColor(muscleGroup);
-  return `<span class="badge" style="
-    color:${color};
-    border-color:${color}33;
-    background:${color}1a;
-  ">${muscleGroup.toUpperCase()}</span>`;
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  HELPERS DE ARCHIVOS E IMAGENES
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-/**
- * Convierte un objeto File a cadena base64 (data URL).
- * Usado para guardar imagenes de ejercicios en IndexedDB.
- * @param {File} file
- * @returns {Promise<string>} data URL en base64
- */
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
+// --- Formateo de Datos ---
+function formatDate(isoString) {
+  if (!isoString) return '—';
+  const date = new Date(isoString);
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
   });
 }
 
-/** Todos los grupos musculares disponibles para los selectores */
-const MUSCLE_GROUPS = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Biceps', 'Triceps', 'Core', 'Otro'];
+function formatDuration(ms) {
+  if (!ms) return '00:00';
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const hh = Math.floor(m / 60);
+  const mm = m % 60;
+  const ss = s % 60;
+  
+  if (hh > 0) {
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  }
+  return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+}
+
+// --- Colores por Musculo ---
+function getMuscleColor(muscle) {
+  const colors = {
+    'Pecho': '#3b82f6',
+    'Espalda': '#10b981',
+    'Piernas': '#f59e0b',
+    'Hombros': '#8b5cf6',
+    'Biceps': '#ec4899',
+    'Triceps': '#6366f1',
+    'Core': '#14b8a6',
+    'Cardio': '#f43f5e'
+  };
+  return colors[muscle] || '#94a3b8';
+}
+
+// --- Imagenes ---
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
