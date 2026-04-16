@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  db.js — Wrapper de IndexedDB para Gym Init
+ *  db.js â€” Wrapper de IndexedDB para Gym Init
  *
  *  Provee una API async limpia sobre IndexedDB para los tres
  *  almacenes de datos: exercises, routines y sessions.
@@ -10,9 +10,9 @@
  *  2 rutinas, 15 sesiones pasadas) para alimentar los graficos.
  *
  *  Stores:
- *    exercises → { id, name, muscleGroup, type, description, image }
- *    routines  → { id, name, description, exercises[], createdAt }
- *    sessions  → { id, date, routineId, duration, logs[] }
+ *    exercises â†’ { id, name, muscleGroup, type, description, image }
+ *    routines  â†’ { id, name, description, exercises[], createdAt }
+ *    sessions  â†’ { id, date, routineId, duration, logs[] }
  * ============================================================
  */
 
@@ -21,7 +21,7 @@ const DB_NAME = 'GymInitDB';
 const DB_VERSION = 1;
 
 /**
- * GymDB — Wrapper singleton para operaciones IndexedDB.
+ * GymDB â€” Wrapper singleton para operaciones IndexedDB.
  *
  * Uso:
  *   await GymDB.init();
@@ -33,9 +33,9 @@ const GymDB = {
   /** @type {IDBDatabase|null} Conexion abierta a la base de datos */
   _db: null,
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  INICIALIZACION
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Abre (o crea) la base de datos y ejecuta la semilla si es necesario.
@@ -78,13 +78,13 @@ const GymDB = {
       request.onsuccess = async (event) => {
         this._db = event.target.result;
 
-        // Verifica si la DB esta vacia (primer uso) → inserta datos semilla
+        // Verifica si la DB esta vacia (primer uso) â†’ inserta datos semilla
         try {
           const count = await this._countStore('exercises');
           if (count === 0) {
-            console.log('%c🌱 Sembrando base de datos...', 'color: #10b981; font-weight: bold;');
+            console.log('%cðŸŒ± Sembrando base de datos...', 'color: #10b981; font-weight: bold;');
             await this._seedAll();
-            console.log('%c✅ Semilla completada!', 'color: #10b981;');
+            console.log('%câœ… Semilla completada!', 'color: #10b981;');
           }
         } catch (err) {
           console.error('Error en semilla:', err);
@@ -100,9 +100,9 @@ const GymDB = {
     });
   },
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  HELPERS CRUD GENERICOS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Cuenta los registros en un store.
@@ -200,9 +200,9 @@ const GymDB = {
     });
   },
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  CRUD DE EJERCICIOS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   exercises: {
     /** Obtiene todos los ejercicios */
@@ -218,7 +218,7 @@ const GymDB = {
 
     /**
      * Agrega un nuevo ejercicio.
-     * @param {Object} data — { name, muscleGroup, type, description, image }
+     * @param {Object} data â€” { name, muscleGroup, type, description, image }
      * @returns {Promise<string>} ID del ejercicio creado
      */
     async add(data) {
@@ -238,7 +238,7 @@ const GymDB = {
 
     /**
      * Actualiza un ejercicio existente.
-     * @param {Object} data — debe incluir id
+     * @param {Object} data â€” debe incluir id
      */
     async update(data) {
       if (!data.id) throw new Error('Se requiere el ID del ejercicio para actualizar');
@@ -268,9 +268,9 @@ const GymDB = {
     }
   },
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  CRUD DE RUTINAS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   routines: {
     /** Obtiene todas las rutinas */
@@ -281,7 +281,7 @@ const GymDB = {
 
     /**
      * Agrega una nueva rutina.
-     * @param {Object} data — { name, description, exercises[] }
+     * @param {Object} data â€” { name, description, exercises[] }
      */
     async add(data) {
       const routine = {
@@ -332,9 +332,9 @@ const GymDB = {
     }
   },
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  CRUD DE SESIONES
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   sessions: {
     /** Obtiene todas las sesiones, ordenadas por fecha descendente (mas reciente primero) */
@@ -353,7 +353,7 @@ const GymDB = {
 
     /**
      * Agrega una nueva sesion.
-     * @param {Object} data — { routineId, duration, logs[] }
+     * @param {Object} data â€” { routineId, duration, logs[] }
      */
     async add(data) {
       const session = {
@@ -406,9 +406,9 @@ const GymDB = {
     }
   },
 
-  // ════════════════════════════════════════════
-  //  DATOS SEMILLA — Auto-poblado en primer uso
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  DATOS SEMILLA â€” Auto-poblado en primer uso
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Inserta todos los datos semilla: ejercicios, rutinas y sesiones simuladas.
@@ -461,7 +461,7 @@ const GymDB = {
         name: 'Peso Muerto',
         muscleGroup: 'Espalda',
         type: 'Peso Libre',
-        description: 'Ejercicio compuesto para espalda baja, gluteos e isquiotibiales. Mantén la espalda recta durante todo el movimiento.',
+        description: 'Ejercicio compuesto para espalda baja, gluteos e isquiotibiales. MantÃ©n la espalda recta durante todo el movimiento.',
         image: ''
       },
       {
@@ -477,7 +477,7 @@ const GymDB = {
         name: 'Curl de Biceps',
         muscleGroup: 'Biceps',
         type: 'Peso Libre',
-        description: 'Ejercicio de aislamiento para biceps con barra o mancuernas. Mantén los codos pegados al cuerpo.',
+        description: 'Ejercicio de aislamiento para biceps con barra o mancuernas. MantÃ©n los codos pegados al cuerpo.',
         image: ''
       },
       {
@@ -485,7 +485,7 @@ const GymDB = {
         name: 'Extension de Triceps',
         muscleGroup: 'Triceps',
         type: 'Maquina',
-        description: 'Extension de triceps en polea alta. Mantén los codos fijos a los costados y extiende completamente.',
+        description: 'Extension de triceps en polea alta. MantÃ©n los codos fijos a los costados y extiende completamente.',
         image: ''
       },
       {
@@ -517,7 +517,7 @@ const GymDB = {
         name: 'Remo con Barra',
         muscleGroup: 'Espalda',
         type: 'Peso Libre',
-        description: 'Remo inclinado con barra. Trabaja dorsales, romboides y biceps. Mantén la espalda a 45 grados.',
+        description: 'Remo inclinado con barra. Trabaja dorsales, romboides y biceps. MantÃ©n la espalda a 45 grados.',
         image: ''
       },
       {
@@ -533,7 +533,7 @@ const GymDB = {
         name: 'Plancha Abdominal',
         muscleGroup: 'Core',
         type: 'Peso Libre',
-        description: 'Ejercicio isometrico de core. Mantén el cuerpo recto apoyandote en antebrazos y puntas de los pies.',
+        description: 'Ejercicio isometrico de core. MantÃ©n el cuerpo recto apoyandote en antebrazos y puntas de los pies.',
         image: ''
       }
     ];
@@ -668,9 +668,9 @@ const GymDB = {
     return weights[exerciseId] || 30;
   },
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  ADMINISTRACION DE LA BASE DE DATOS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Elimina completamente la base de datos (para pruebas / reseteo).

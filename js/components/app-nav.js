@@ -1,17 +1,17 @@
-/**
+﻿/**
  * ============================================================
- *  <app-nav> — Componente principal de navegacion
+ *  <app-nav> â€” Componente principal de navegacion
  *
  *  Renderiza dos layouts segun el ancho de la ventana:
- *    - Desktop (>= 768px) → Barra lateral izquierda con logo + menu vertical
- *    - Movil  (< 768px)  → Barra de navegacion fija en la parte inferior
+ *    - Desktop (>= 768px) â†’ Barra lateral izquierda con logo + menu vertical
+ *    - Movil  (< 768px)  â†’ Barra de navegacion fija en la parte inferior
  *
  *  Ambos se renderizan simultaneamente; el CSS muestra/oculta
  *  el apropiado mediante media queries.
  *
  *  Comunicacion:
- *    Escucha → CustomEvent 'route-changed' (emitido por el Router)
- *    Emite   → cambios de hash via window.location.hash
+ *    Escucha â†’ CustomEvent 'route-changed' (emitido por el Router)
+ *    Emite   â†’ cambios de hash via window.location.hash
  * ============================================================
  */
 
@@ -52,16 +52,16 @@ class AppNav extends HTMLElement {
     });
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  CONSTRUCCION DEL DOM
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Genera el HTML completo para sidebar + bottom nav.
    * @returns {string} Cadena HTML
    */
   _buildHTML() {
-    // Construye lista de items — reutilizada en sidebar y bottom nav
+    // Construye lista de items â€” reutilizada en sidebar y bottom nav
     const sidebarItems = this._items.map(item => `
       <a class="nav-item" data-route="${item.hash}" href="${item.hash}" aria-label="${item.label}">
         <i class="ph-bold ${item.icon}"></i>
@@ -84,7 +84,11 @@ class AppNav extends HTMLElement {
             <div class="sidebar-logo-icon">
               <i class="ph-fill ph-barbell"></i>
             </div>
-            <span class="sidebar-logo-text">Gym-<span class="logo-accent">Init</span></span>
+            <div style="display:flex; flex-direction:column; gap:0;">
+              <span class="sidebar-logo-text" style="line-height:1.2;">Gym Init</span>
+              <span style="font-size:8px; font-weight:800; color:var(--text-muted); letter-spacing:0.15em; text-transform:uppercase;">Dale Push a tu entrenamiento</span>
+              
+            </div>
           </a>
         </div>
         <div class="sidebar-divider"></div>
@@ -96,7 +100,7 @@ class AppNav extends HTMLElement {
         <div class="sidebar-footer">
           <div class="sidebar-divider"></div>
           <p class="sidebar-footer-text">
-            <i class="ph ph-code"></i> Gym-Init v1.0
+            <i class="ph ph-code"></i> Gym Init v1.0
           </p>
         </div>
       </aside>
@@ -108,29 +112,29 @@ class AppNav extends HTMLElement {
     `;
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  GESTION DEL ESTADO ACTIVO
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Resalta el item de nav que coincide con el hash de ruta actual.
    * Maneja casos especiales para rutas parametrizadas:
-   *   #session/abc123 → resalta "Sesiones"
-   *   #routine/abc123 → resalta "Rutinas"
+   *   #session/abc123 â†’ resalta "Sesiones"
+   *   #routine/abc123 â†’ resalta "Rutinas"
    *
-   * @param {string} hash — Hash de location actual
+   * @param {string} hash â€” Hash de location actual
    */
   _highlightActive(hash) {
     this.querySelectorAll('.nav-item').forEach(item => {
       const route = item.dataset.route;
       let isActive = (hash === route);
 
-      // #session/<id> (vista detalle) → resalta tab "Sesiones"
+      // #session/<id> (vista detalle) â†’ resalta tab "Sesiones"
       if (!isActive && route === '#sessions' && /^#session\/(?!new)[^/]+$/.test(hash)) {
         isActive = true;
       }
 
-      // #routine/<id> (vista detalle) → resalta tab "Rutinas"
+      // #routine/<id> (vista detalle) â†’ resalta tab "Rutinas"
       if (!isActive && route === '#routines' && /^#routine\/[^/]+$/.test(hash)) {
         isActive = true;
       }

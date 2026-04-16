@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  <error-state> — Pantalla de error reutilizable
+ *  <error-state> â€” Pantalla de error reutilizable
  *
  *  Muestra un icono de error, mensaje y boton de reintento.
  *  Usado en las vistas cuando las operaciones de IndexedDB fallan.

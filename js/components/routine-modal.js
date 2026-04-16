@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  <routine-modal> — Modal para Crear / Editar Rutinas
+ *  <routine-modal> â€” Modal para Crear / Editar Rutinas
  *
  *  Modal con campos de formulario y un selector interactivo de ejercicios.
  *  Para cada ejercicio seleccionado, el usuario configura series y reps objetivo.
@@ -129,14 +129,14 @@ class RoutineModal extends HTMLElement {
     }
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  API PUBLICA
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Abre el modal.
-   * @param {Object|null} routine — Rutina existente a editar, o null para nueva
-   * @param {Function} onSave — Callback tras guardar
+   * @param {Object|null} routine â€” Rutina existente a editar, o null para nueva
+   * @param {Function} onSave â€” Callback tras guardar
    */
   async open(routine = null, onSave = null) {
     this._routine  = routine;
@@ -187,9 +187,9 @@ class RoutineModal extends HTMLElement {
     setTimeout(() => this.querySelector('#rt-name').focus(), 100);
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  RENDERIZADO
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /** Renderiza el listado de checkboxes del selector de ejercicios */
   _renderExercisePicker() {
@@ -253,7 +253,7 @@ class RoutineModal extends HTMLElement {
                      value="${sel.sets}" min="1" max="20" style="width:52px; padding:6px; text-align:center; font-size:13px;">
               <span class="config-label">series</span>
             </div>
-            <span style="color:var(--text-muted);">×</span>
+            <span style="color:var(--text-muted);">Ã—</span>
             <div class="config-field">
               <input type="number" class="form-input sel-reps" data-id="${sel.exerciseId}"
                      value="${sel.reps}" min="1" max="100" style="width:52px; padding:6px; text-align:center; font-size:13px;">
@@ -269,9 +269,9 @@ class RoutineModal extends HTMLElement {
     }).join('');
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  LOGICA
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Agrega o quita un ejercicio de la lista seleccionada.

@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  <loading-state> — Indicador de carga reutilizable
+ *  <loading-state> â€” Indicador de carga reutilizable
  *
  *  Muestra un spinner giratario con un mensaje personalizable.
  *  Usado en todas las vistas mientras se cargan datos de IndexedDB.

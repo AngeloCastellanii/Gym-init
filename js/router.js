@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  Router — Navegacion SPA basada en hash para Gym Init
+ *  Router â€” Navegacion SPA basada en hash para Gym Init
  *
  *  Maneja el registro de rutas, escucha cambios de hash,
  *  soporta rutas parametrizadas (#session/:id) y
@@ -17,7 +17,7 @@
 class Router {
 
   /**
-   * @param {string} outletSelector — Selector CSS del contenedor
+   * @param {string} outletSelector â€” Selector CSS del contenedor
    *        donde se montaran las vistas.
    */
   constructor(outletSelector) {
@@ -34,16 +34,16 @@ class Router {
     window.addEventListener('hashchange', () => this._resolve());
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  API PUBLICA
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
-   * Registra un mapeo ruta → componente.
+   * Registra un mapeo ruta â†’ componente.
    * Soporta patrones parametrizados como '#session/:id'.
    *
-   * @param {string} pattern  — Patron de hash (ej: '#exercises')
-   * @param {string} tagName  — Nombre del Custom Element
+   * @param {string} pattern  â€” Patron de hash (ej: '#exercises')
+   * @param {string} tagName  â€” Nombre del Custom Element
    */
   on(pattern, tagName) {
     // Convierte segmentos :param en grupos de captura para regex
@@ -58,7 +58,7 @@ class Router {
   }
 
   /**
-   * Inicia el router — resuelve el hash actual o navega
+   * Inicia el router â€” resuelve el hash actual o navega
    * a la ruta por defecto (#dashboard).
    */
   start() {
@@ -71,15 +71,15 @@ class Router {
 
   /**
    * Navega a una ruta de forma programatica.
-   * @param {string} hash — ej: '#exercises' o '#session/abc123'
+   * @param {string} hash â€” ej: '#exercises' o '#session/abc123'
    */
   navigate(hash) {
     window.location.hash = hash;
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  METODOS INTERNOS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Compara el hash actual con las rutas registradas
@@ -101,16 +101,16 @@ class Router {
       }
     }
 
-    // Sin ruta coincidente → ir al dashboard
+    // Sin ruta coincidente â†’ ir al dashboard
     window.location.hash = '#dashboard';
   }
 
   /**
    * Desmonta la vista actual y monta una nueva.
    *
-   * @param {string} tagName — Custom element a crear
-   * @param {Object} params  — Parametros de ruta (ej: { id: '123' })
-   * @param {string} hash    — Hash completo actual
+   * @param {string} tagName â€” Custom element a crear
+   * @param {Object} params  â€” Parametros de ruta (ej: { id: '123' })
+   * @param {string} hash    â€” Hash completo actual
    */
   _mount(tagName, params, hash) {
     // Destruye la vista anterior

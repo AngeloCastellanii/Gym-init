@@ -1,5 +1,5 @@
-/* ============================================================
-   GYM INIT — Global Styles
+﻿/* ============================================================
+   GYM INIT â€” Global Styles
    Design Tokens, Reset, Glassmorphism, Navigation,
    Components, Animations, and Utilities
    ============================================================ */
@@ -11,52 +11,52 @@
    1. CSS Design Tokens (Custom Properties)
    ============================================================ */
 :root {
-  /* Backgrounds (Slate scale) */
-  --bg-base:   #020617;   /* Slate 950 — deepest */
-  --bg-panel:  #0f172a;   /* Slate 900 — sidebar / panels */
-  --bg-card:   #1e293b;   /* Slate 800 — card fills */
+  /* Backgrounds (Kinetic Slate) */
+  --bg-base:   #0B0E14;   /* Obsidian â€” deepest background */
+  --bg-panel:  #111827;   /* Slate 900 â€” sidebar */
+  --bg-card:   #161D2C;   /* Darker Navy â€” card fills */
 
-  /* Primary Accent — Blue */
-  --accent:        #2563eb;   /* Blue 600 */
-  --accent-light:  #3b82f6;   /* Blue 500 */
-  --accent-glow:   rgba(37, 99, 235, 0.35);
+  /* Primary Accent â€” Kinetic Blue */
+  --accent:        #2563EB;   /* Vibrant Blue */
+  --accent-light:  #60A5FA;   /* Sky Blue */
+  --accent-glow:   rgba(37, 99, 235, 0.25);
 
-  /* Success — Emerald */
-  --success:       #059669;   /* Emerald 600 */
-  --success-light: #10b981;   /* Emerald 500 */
-  --success-glow:  rgba(5, 150, 105, 0.35);
+  /* Success â€” Kinetic Green */
+  --success:       #059669;
+  --success-light: #10B981;
+  --success-glow:  rgba(16, 185, 129, 0.25);
 
-  /* Danger — Red */
-  --danger:        #dc2626;   /* Red 600 */
-  --danger-light:  #f87171;   /* Red 400 */
+  /* Danger â€” Red */
+  --danger:        #EF4444;
+  --danger-light:  #F87171;
 
   /* Text */
-  --text-primary:   #ffffff;
-  --text-secondary: #94a3b8;  /* Slate 400 */
-  --text-muted:     #64748b;  /* Slate 500 */
+  --text-primary:   #FFFFFF;
+  --text-secondary: #9CA3AF;  /* Gray 400 */
+  --text-muted:     #4B5563;  /* Gray 600 */
 
   /* Borders & Lines */
-  --border:         #334155;  /* Slate 700 */
-  --border-subtle:  #1e293b;  /* Slate 800 */
+  --border:         #1F2937;  /* Gray 800 */
+  --border-subtle:  #111827;  /* Gray 900 */
 
   /* Glassmorphism Values */
-  --glass-bg:      rgba(30, 41, 59, 0.72);
-  --glass-border:  rgba(255, 255, 255, 0.08);
-  --glass-blur:    12px;
+  --glass-bg:      rgba(22, 29, 44, 0.65);
+  --glass-border:  rgba(255, 255, 255, 0.05);
+  --glass-blur:    16px;
 
   /* Layout Dimensions */
-  --sidebar-width: 256px;
+  --sidebar-width: 260px;
   --sidebar-collapsed: 80px;
   --bottom-nav-height: 70px;
 
   /* Border Radius */
-  --radius-sm:  8px;
-  --radius-md:  12px;
-  --radius-lg:  16px;
-  --radius-xl:  20px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  18px;
 
   /* Transition */
-  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
@@ -116,7 +116,7 @@ a {
 
 
 /* ============================================================
-   4. App Shell — Flex Layout
+   4. App Shell â€” Flex Layout
    ============================================================ */
 #app-shell {
   display: flex;
@@ -143,7 +143,7 @@ a {
 
 
 /* ============================================================
-   5. Navigation — Sidebar (Desktop) & Bottom Bar (Mobile)
+   5. Navigation â€” Sidebar (Desktop) & Bottom Bar (Mobile)
    ============================================================ */
 
 /* -- Custom Element Host -- */
@@ -305,7 +305,7 @@ app-nav {
   display: none;
 }
 
-/* ── Mobile Breakpoint ── */
+/* â”€â”€ Mobile Breakpoint â”€â”€ */
 @media (max-width: 767px) {
   app-nav {
     width: 0;
@@ -401,10 +401,10 @@ app-nav {
 }
 
 .page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
+  font-size: 32px;
+  font-weight: 800;
+  color: #FFFFFF; /* Blanco solido */
+  letter-spacing: -0.04em;
 }
 
 .page-title--gradient {
@@ -861,7 +861,7 @@ app-nav {
 
 
 /* ============================================================
-   15. Set Row (Tracker — Active Session)
+   15. Set Row (Tracker â€” Active Session)
    ============================================================ */
 .set-row {
   display: grid;

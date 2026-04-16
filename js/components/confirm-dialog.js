@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  <confirm-dialog> — Modal de confirmacion reutilizable
+ *  <confirm-dialog> â€” Modal de confirmacion reutilizable
  *
  *  Muestra un modal de advertencia para acciones destructivas (eliminar).
  *  Devuelve una Promise que se resuelve en true (confirmado) o
@@ -65,17 +65,17 @@ class ConfirmDialog extends HTMLElement {
     }
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  API PUBLICA
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Muestra el dialogo y devuelve una promise.
    * @param {Object} options
-   * @param {string} options.title       — Titulo del modal
-   * @param {string} options.message     — Texto descriptivo
-   * @param {string} [options.impact]    — Advertencia opcional (ej: impacto en rutinas)
-   * @param {string} [options.confirmText] — Texto personalizado del boton
+   * @param {string} options.title       â€” Titulo del modal
+   * @param {string} options.message     â€” Texto descriptivo
+   * @param {string} [options.impact]    â€” Advertencia opcional (ej: impacto en rutinas)
+   * @param {string} [options.confirmText] â€” Texto personalizado del boton
    * @returns {Promise<boolean>} true si confirmado, false si cancelado
    */
   show({ title, message, impact, confirmText } = {}) {
@@ -115,9 +115,9 @@ class ConfirmDialog extends HTMLElement {
     }
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  METODOS INTERNOS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Resuelve la promise y elimina el dialogo del DOM.

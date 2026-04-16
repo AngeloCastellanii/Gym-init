@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  <routines-view> — Vista de Gestion de Rutinas (#routines)
+ *  <routines-view> â€” Vista de Gestion de Rutinas (#routines)
  *
  *  Muestra todas las rutinas como glass cards con una decoracion
  *  de cuarto de circulo. Cada tarjeta muestra el conteo de ejercicios,
@@ -66,9 +66,9 @@ class RoutinesView extends HTMLElement {
     });
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  CARGA DE DATOS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async loadData() {
     try {
@@ -83,9 +83,9 @@ class RoutinesView extends HTMLElement {
     }
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  RENDERIZADO
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   _renderCards() {
     const grid = this.querySelector('#routine-grid');
@@ -108,7 +108,7 @@ class RoutinesView extends HTMLElement {
 
   /**
    * Genera el HTML para una tarjeta de rutina.
-   * @param {Object} rt — Objeto rutina
+   * @param {Object} rt â€” Objeto rutina
    * @returns {string}
    */
   _cardHTML(rt) {
@@ -155,9 +155,9 @@ class RoutinesView extends HTMLElement {
     `;
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  ACCIONES
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   _openModal(routine) {
     const modal = document.createElement('routine-modal');

@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  <exercise-modal> — Modal para Crear / Editar Ejercicios
+ *  <exercise-modal> â€” Modal para Crear / Editar Ejercicios
  *
  *  Formulario modal para agregar ejercicios nuevos o editar existentes.
  *  Campos: nombre, grupoMuscular, tipo, descripcion, imagen.
@@ -134,14 +134,14 @@ class ExerciseModal extends HTMLElement {
     }
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  API PUBLICA
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Abre el modal en modo crear o editar.
-   * @param {Object|null} exercise — Ejercicio existente a editar, o null para nuevo
-   * @param {Function} onSave — Callback tras guardar exitosamente
+   * @param {Object|null} exercise â€” Ejercicio existente a editar, o null para nuevo
+   * @param {Function} onSave â€” Callback tras guardar exitosamente
    */
   open(exercise = null, onSave = null) {
     this._exercise  = exercise;
@@ -184,9 +184,9 @@ class ExerciseModal extends HTMLElement {
     setTimeout(() => this.querySelector('#ex-name').focus(), 100);
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  METODOS INTERNOS
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /** Actualiza el area de vista previa de imagen */
   _updateImagePreview() {

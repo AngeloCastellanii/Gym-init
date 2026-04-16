@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  <exercises-view> — Vista del Catalogo de Ejercicios (#exercises)
+ *  <exercises-view> â€” Vista del Catalogo de Ejercicios (#exercises)
  *
  *  Muestra todos los ejercicios como glass cards con busqueda y filtro.
  *  Soporta operaciones CRUD via modales y dialogos de confirmacion.
@@ -98,9 +98,9 @@ class ExercisesView extends HTMLElement {
     });
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  CARGA DE DATOS (llamado por el Router tras montar)
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Carga los ejercicios desde IndexedDB y renderiza las tarjetas.
@@ -119,9 +119,9 @@ class ExercisesView extends HTMLElement {
     }
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  RENDERIZADO
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Filtra los ejercicios segun busqueda/filtro actuales y renderiza.
@@ -174,14 +174,14 @@ class ExercisesView extends HTMLElement {
 
   /**
    * Genera el HTML para una sola tarjeta de ejercicio.
-   * @param {Object} ex — Objeto ejercicio
+   * @param {Object} ex â€” Objeto ejercicio
    * @returns {string} Cadena HTML
    */
   _cardHTML(ex) {
     const color = getMuscleColor(ex.muscleGroup);
     const desc = fallback(ex.description, 'Sin descripcion');
     // Trunca la descripcion a ~100 caracteres
-    const shortDesc = desc.length > 100 ? desc.slice(0, 100) + '…' : desc;
+    const shortDesc = desc.length > 100 ? desc.slice(0, 100) + 'â€¦' : desc;
 
     const imageArea = ex.image
       ? `<img src="${ex.image}" alt="${ex.name}" class="exercise-card-img">`
@@ -229,9 +229,9 @@ class ExercisesView extends HTMLElement {
     `;
   }
 
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  ACCIONES
-  // ════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Abre el modal de ejercicio para crear o editar.

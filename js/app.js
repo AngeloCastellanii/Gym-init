@@ -1,6 +1,6 @@
-/**
+﻿/**
  * ============================================================
- *  App.js — Arranque de la aplicacion Gym Init
+ *  App.js â€” Arranque de la aplicacion Gym Init
  *
  *  1. Define la vista Dashboard (placeholder con KPIs y graficos).
  *  2. Registra todos los Custom Elements.
@@ -11,10 +11,10 @@
  * ============================================================
  */
 
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  VISTA: Dashboard (#dashboard)
 //  Placeholder con tarjetas KPI y slots de graficos
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class DashboardView extends HTMLElement {
   constructor() {
@@ -29,22 +29,21 @@ class DashboardView extends HTMLElement {
     this.innerHTML = `
       <div class="page-header">
         <div>
-          <h1 class="page-title page-title--gradient">Panel de Control</h1>
+          <h1 class="page-title">Panel de Control</h1>
           <p class="page-subtitle">Resumen de tu progreso de entrenamiento</p>
         </div>
         <button class="btn btn-glass" id="unit-toggle">
           <i class="ph-bold ph-scales"></i>
-          Unidad: ${unitLabel()}
+          Unidad: <span id="unit-label">${unitLabel()}</span>
         </button>
       </div>
       <div class="view-content">
-
         <!-- Fila de tarjetas KPI -->
         <div class="kpi-grid">
-          ${this._kpiCard('Total Sesiones', '—', 'ph-calendar-check', 'var(--accent-light)')}
-          ${this._kpiCard('Racha Actual', '—', 'ph-fire', 'var(--success-light)')}
-          ${this._kpiCard('Vol. Total', '—', 'ph-barbell', '#f97316')}
-          ${this._kpiCard('Ejercicios', '—', 'ph-list-checks', '#a78bfa')}
+          ${this._kpiCard('Total Sesiones', 'â€”', 'ph-calendar-check', 'var(--accent-light)')}
+          ${this._kpiCard('Racha Actual', 'â€”', 'ph-fire', 'var(--success-light)')}
+          ${this._kpiCard('Vol. Total', 'â€”', 'ph-barbell', '#f97316')}
+          ${this._kpiCard('Ejercicios', 'â€”', 'ph-list-checks', '#a78bfa')}
         </div>
 
         <!-- Cuadricula de graficos -->
@@ -68,6 +67,15 @@ class DashboardView extends HTMLElement {
         </div>
       </div>
     `;
+
+    // Script para cambiar unidades (Kg/Lb)
+    this.querySelector('#unit-toggle').addEventListener('click', () => {
+      const current = getWeightUnit();
+      const next = current === 'kg' ? 'lb' : 'kg';
+      setWeightUnit(next);
+      this.querySelector('#unit-label').textContent = unitLabel();
+      console.log(`Unidades cambiadas a: ${next}`);
+    });
   }
 
   /** Genera una tarjeta KPI de estadistica */
@@ -105,10 +113,10 @@ class DashboardView extends HTMLElement {
 }
 
 
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  VISTA: Sesiones (#sessions)
 //  Placeholder historial
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class SessionsView extends HTMLElement {
   constructor() {
@@ -137,10 +145,10 @@ class SessionsView extends HTMLElement {
 }
 
 
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  VISTA: Entrenamiento Activo (#session/new)
 //  Placeholder con estilo de modal de configuracion
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class ActiveSessionView extends HTMLElement {
   constructor() {
@@ -161,7 +169,7 @@ class ActiveSessionView extends HTMLElement {
           <h2 style="font-size:24px; font-weight:800; margin-bottom:8px; letter-spacing:-0.5px;">Modo Entrenamiento</h2>
           <p style="color:var(--text-secondary); margin-bottom:28px; font-size:14px;">Selecciona una rutina para comenzar tu sesion</p>
           <select class="form-select" style="margin-bottom:20px; text-align:center;">
-            <option>— Seleccionar rutina —</option>
+            <option>â€” Seleccionar rutina â€”</option>
           </select>
           <button class="btn btn-success" style="width:100%; justify-content:center; padding:16px; font-size:16px; font-weight:700; letter-spacing:0.5px;">
             <i class="ph-bold ph-play"></i>
@@ -175,24 +183,24 @@ class ActiveSessionView extends HTMLElement {
 }
 
 
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  REGISTRO DE CUSTOM ELEMENTS
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 customElements.define('dashboard-view',       DashboardView);
 customElements.define('sessions-view',        SessionsView);
 customElements.define('active-session-view',  ActiveSessionView);
 
 
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  INICIALIZACION DEL ROUTER Y ARRANQUE
-// ──────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 (async function initApp() {
   // Inicializa IndexedDB (siembra datos en el primer uso)
   try {
     await GymDB.init();
-    console.log('%c📦 Base de datos lista', 'color: #3b82f6;');
+    console.log('%cðŸ“¦ Base de datos lista', 'color: #3b82f6;');
   } catch (err) {
     console.error('Error al inicializar la base de datos:', err);
   }
@@ -218,8 +226,8 @@ customElements.define('active-session-view',  ActiveSessionView);
   router.start();
 
   console.log(
-    '%c🏋️ Gym Init v1.0 %c— Lista',
-    'color: #3b82f6; font-weight: bold; font-size: 14px;',
-    'color: #94a3b8; font-size: 12px;'
+    '%cðŸ‹ï¸ Gym Init v1.0 %câ€” Ready',
+    'color: #2563EB; font-weight: bold; font-size: 14px;',
+    'color: #9CA3AF; font-size: 12px;'
   );
 })();
