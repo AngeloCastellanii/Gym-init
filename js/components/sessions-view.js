@@ -1,8 +1,6 @@
 /**
  * ============================================================
  *  <sessions-view> — Historial de Sesiones
- *
- *  Muestra la lista de entrenamientos pasados con estadisticas.
  * ============================================================
  */
 
@@ -31,21 +29,23 @@ class SessionsView extends HTMLElement {
     `;
   }
 
-  /** Carga datos de la DB */
   async loadData() {
     try {
+      const db = await GymDB.init();
       this._sessions = await GymDB.sessions.getAll();
       this._routines = await GymDB.routines.getAll();
       this._exercises = await GymDB.exercises.getAll();
       this._renderSessions();
     } catch (err) {
       console.error('Error al cargar sesiones:', err);
-      this.querySelector('#sessions-list').innerHTML = `<error-state></error-state>`;
+      const list = this.querySelector('#sessions-list');
+      if (list) list.innerHTML = `<error-state></error-state>`;
     }
   }
 
   _renderSessions() {
     const container = this.querySelector('#sessions-list');
+    if (!container) return;
 
     if (this._sessions.length === 0) {
       container.innerHTML = `
@@ -64,12 +64,13 @@ class SessionsView extends HTMLElement {
 
     container.innerHTML = this._sessions.map(session => {
       const routine = this._routines.find(r => r.id === session.routineId);
-      const routineName = routine ? routine.name : 'Rutina eliminada';
-      const date = formatDate(session.date);
-      const duration = formatDuration(session.duration);
+      const routineName = routine ? routine.name : 'Rutina personalizada';
       
-      const totalSets = session.logs.reduce((acc, log) => acc + log.sets.length, 0);
-      const totalVolume = calcTotalVolume(session.logs);
+      const date = typeof formatDate === 'function' ? formatDate(session.date) : session.date;
+      const duration = typeof formatDuration === 'function' ? formatDuration(session.duration) : '00:00';
+      
+      const totalSets = (session.logs || []).reduce((acc, log) => acc + (log.sets ? log.sets.length : 0), 0);
+      const totalVolume = typeof calcTotalVolume === 'function' ? calcTotalVolume(session.logs) : 0;
 
       return `
         <div class="glass-card hover-lift" style="padding:20px; margin-bottom:12px;">

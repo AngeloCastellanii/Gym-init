@@ -1,14 +1,6 @@
-﻿/**
+/**
  * ============================================================
- *  <routine-modal> â€” Modal para Crear / Editar Rutinas
- *
- *  Modal con campos de formulario y un selector interactivo de ejercicios.
- *  Para cada ejercicio seleccionado, el usuario configura series y reps objetivo.
- *
- *  Uso:
- *    const modal = document.createElement('routine-modal');
- *    modal.open(null, () => refreshList());      // Crear
- *    modal.open(routine, () => refreshList());   // Editar
+ *  <routine-modal> — Modal para Crear / Editar Rutinas
  * ============================================================
  */
 
@@ -16,14 +8,9 @@ class RoutineModal extends HTMLElement {
   constructor() {
     super();
     this._initialized = false;
-
-    /** @type {Object|null} Rutina siendo editada */
     this._routine = null;
-    /** @type {Function|null} Callback tras guardar */
     this._onSave = null;
-    /** @type {Array} Todos los ejercicios de la DB */
     this._allExercises = [];
-    /** @type {Array} Ejercicios actualmente seleccionados con sets/reps */
     this._selected = [];
   }
 
@@ -31,321 +18,173 @@ class RoutineModal extends HTMLElement {
     if (this._initialized) return;
     this._initialized = true;
 
-    // Construye el DOM del modal
     this.innerHTML = `
       <div class="modal-overlay" id="rt-modal-overlay">
-        <div class="modal-box" style="max-width:580px;">
+        <div class="modal-box" style="max-width:620px; background: #0F172A; border: 1px solid rgba(255,255,255,0.1);">
           <div class="modal-header">
-            <h3 class="modal-title" id="rt-modal-title">Nueva Rutina</h3>
+            <h3 class="modal-title" id="rt-modal-title" style="color: #FFFFFF;">Nueva Rutina</h3>
             <button class="modal-close" id="rt-modal-close">&times;</button>
           </div>
-          <div class="modal-body">
-            <!-- Nombre -->
+          <div class="modal-body" style="gap: 24px;">
             <div class="form-group">
-              <label class="form-label" for="rt-name">Nombre de la Rutina</label>
-              <input class="form-input" id="rt-name" placeholder="Ej: Dia de Pecho y Triceps">
+              <label class="form-label">Nombre de la Rutina</label>
+              <input class="form-input" id="rt-name" placeholder="Ej: Empuje (P / H / T)" style="background: #1E293B; color: #FFFFFF; font-weight:600;">
             </div>
-
-            <!-- Descripcion -->
+            
             <div class="form-group">
-              <label class="form-label" for="rt-desc">Descripcion (opcional)</label>
-              <textarea class="form-textarea" id="rt-desc" placeholder="Descripcion general..." style="min-height:60px;"></textarea>
-            </div>
-
-            <!-- Selector de ejercicios -->
-            <div class="form-group">
-              <label class="form-label">Ejercicios</label>
-              <div class="search-bar" style="margin-bottom:8px;">
-                <i class="ph ph-magnifying-glass" style="padding-left:12px; color:var(--text-muted);"></i>
-                <input type="text" placeholder="Buscar ejercicio..." id="rt-exercise-search" style="font-size:13px;">
+              <label class="form-label">Ejercicios disponibles</label>
+              <div class="search-bar" style="margin-bottom:12px; background: #1E293B; border-radius:10px;">
+                <i class="ph ph-magnifying-glass" style="padding-left:14px; color:var(--text-secondary);"></i>
+                <input type="text" placeholder="Buscar ejercicio..." id="rt-exercise-search" style="color: #FFFFFF;">
               </div>
-              <div class="picker-list" id="rt-exercise-list">
-                <!-- Poblado dinamicamente -->
-              </div>
+              <div class="picker-list" id="rt-exercise-list" style="max-height:150px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:8px; padding:6px;"></div>
             </div>
 
-            <!-- Ejercicios seleccionados con inputs de Sets/Reps -->
-            <div class="form-group" id="rt-selected-group" style="display:none;">
-              <label class="form-label" style="display:flex; align-items:center; gap:6px;">
-                <i class="ph-bold ph-list-checks" style="font-size:14px;"></i>
-                Ejercicios Seleccionados
+            <div class="form-group" id="rt-selected-group" style="display:none; margin-top:8px;">
+              <label class="form-label" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="display:flex; align-items:center; gap:8px;"><i class="ph-bold ph-list-numbers" style="color:var(--accent-light);"></i> Plan de Entrenamiento</span>
+                <span id="rt-selected-count" class="badge badge-slate" style="font-size:10px;"></span>
               </label>
-              <div id="rt-selected-list" class="selected-exercises-list">
-                <!-- Poblado dinamicamente -->
-              </div>
+              <div id="rt-selected-list" style="display:flex; flex-direction:column; gap:10px;"></div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" id="rt-save" style="width:100%;">
-              <i class="ph-bold ph-floppy-disk"></i> Guardar Rutina
+          <div class="modal-footer" style="padding-top:24px; border-top:1px solid rgba(255,255,255,0.05);">
+            <button class="btn btn-primary" id="rt-save" style="width:100%; justify-content:center; padding:18px; font-size:16px; font-weight:800; letter-spacing:0.5px;">
+              <i class="ph-bold ph-floppy-disk"></i> GUARDAR RUTINA
             </button>
           </div>
         </div>
       </div>
     `;
 
-    // Manejadores de eventos
     this.querySelector('#rt-modal-close').addEventListener('click', () => this._close());
     this.querySelector('#rt-modal-overlay').addEventListener('click', (e) => {
-      if (e.target.id === 'rt-modal-overlay') this._close();
+      if(e.target.id === 'rt-modal-overlay') this._close();
     });
     this.querySelector('#rt-save').addEventListener('click', () => this._save());
-
-    // Filtrado de busqueda de ejercicios
-    this.querySelector('#rt-exercise-search').addEventListener('input', () => {
-      this._renderExercisePicker();
-    });
-
-    // Checkboxes del selector (delegacion de eventos)
-    this.querySelector('#rt-exercise-list').addEventListener('change', (e) => {
-      if (e.target.matches('.picker-checkbox')) {
-        this._toggleExercise(e.target.value, e.target.checked);
-      }
-    });
-
-    // Cambios en Sets/Reps de la lista seleccionada (delegacion)
-    this.querySelector('#rt-selected-list').addEventListener('input', (e) => {
-      if (e.target.matches('.sel-sets') || e.target.matches('.sel-reps')) {
-        const id    = e.target.dataset.id;
-        const field = e.target.matches('.sel-sets') ? 'sets' : 'reps';
-        const val   = parseInt(e.target.value) || 1;
-        const item  = this._selected.find(s => s.exerciseId === id);
-        if (item) item[field] = val;
-      }
-    });
-
-    // Remover de la lista seleccionada
-    this.querySelector('#rt-selected-list').addEventListener('click', (e) => {
-      const removeBtn = e.target.closest('[data-remove]');
-      if (removeBtn) {
-        this._toggleExercise(removeBtn.dataset.remove, false);
-      }
-    });
-
-    // Aplica la configuracion pendiente si open() se llamo antes de montar
-    if (this._pendingOpen) {
-      this._applyOpen(this._pendingOpen.routine, this._pendingOpen.onSave);
-      this._pendingOpen = null;
-    }
+    this.querySelector('#rt-exercise-search').addEventListener('input', () => this._renderExercisePicker());
   }
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  API PUBLICA
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-  /**
-   * Abre el modal.
-   * @param {Object|null} routine â€” Rutina existente a editar, o null para nueva
-   * @param {Function} onSave â€” Callback tras guardar
-   */
   async open(routine = null, onSave = null) {
-    this._routine  = routine;
-    this._onSave   = onSave;
-    this._selected = [];
-
-    // Carga todos los ejercicios para el selector
+    this._routine = routine;
+    this._onSave = onSave;
     this._allExercises = await GymDB.exercises.getAll();
-
-    if (routine) {
-      // Pre-selecciona los ejercicios existentes
-      this._selected = (routine.exercises || []).map(e => ({
-        exerciseId: e.exerciseId,
-        order: e.order,
-        sets: e.sets || 3,
-        reps: e.reps || 10
-      }));
-    }
-
-    this._pendingOpen = { routine, onSave };
-
-    // Monta en el DOM (esto dispara connectedCallback)
+    this._selected = routine ? JSON.parse(JSON.stringify(routine.exercises || [])) : [];
+    
     document.body.appendChild(this);
+    this._applyOpen();
   }
 
-  /** Aplica la configuracion del modal tras el montaje */
-  _applyOpen(routine, onSave) {
-    this._routine = routine;
-    this._onSave  = onSave;
-
-    if (routine) {
-      // Modo edicion
+  _applyOpen() {
+    if (this._routine) {
       this.querySelector('#rt-modal-title').textContent = 'Editar Rutina';
-      this.querySelector('#rt-name').value = routine.name || '';
-      this.querySelector('#rt-desc').value = routine.description || '';
-      this.querySelector('#rt-save').innerHTML =
-        '<i class="ph-bold ph-floppy-disk"></i> Actualizar Rutina';
-    } else {
-      // Modo creacion
-      this.querySelector('#rt-modal-title').textContent = 'Nueva Rutina';
-      this.querySelector('#rt-name').value = '';
-      this.querySelector('#rt-desc').value = '';
+      this.querySelector('#rt-name').value = this._routine.name;
     }
-
     this._renderExercisePicker();
     this._renderSelectedList();
-
-    setTimeout(() => this.querySelector('#rt-name').focus(), 100);
   }
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  RENDERIZADO
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-  /** Renderiza el listado de checkboxes del selector de ejercicios */
   _renderExercisePicker() {
-    const searchTerm = this.querySelector('#rt-exercise-search').value.toLowerCase().trim();
+    const search = this.querySelector('#rt-exercise-search').value.toLowerCase();
     const list = this.querySelector('#rt-exercise-list');
+    const filtered = this._allExercises.filter(ex => ex.name.toLowerCase().includes(search));
 
-    let exercises = this._allExercises;
-    if (searchTerm) {
-      exercises = exercises.filter(ex =>
-        ex.name.toLowerCase().includes(searchTerm) ||
-        ex.muscleGroup.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (exercises.length === 0) {
-      list.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:16px; font-size:13px;">
-        No se encontraron ejercicios</p>`;
-      return;
-    }
-
-    list.innerHTML = exercises.map(ex => {
+    list.innerHTML = filtered.map(ex => {
       const isChecked = this._selected.some(s => s.exerciseId === ex.id);
-      const color = getMuscleColor(ex.muscleGroup);
       return `
-        <label class="picker-item ${isChecked ? 'picker-item--checked' : ''}">
-          <input type="checkbox" class="picker-checkbox" value="${ex.id}" ${isChecked ? 'checked' : ''}>
-          <span class="picker-name">${ex.name}</span>
-          <span class="badge" style="color:${color}; border-color:${color}33; background:${color}1a; font-size:9px; padding:2px 6px;">
-            ${ex.muscleGroup}
-          </span>
+        <label class="badge ${isChecked ? 'badge-blue' : 'badge-slate'}" style="cursor:pointer; padding:8px 14px; font-size:11px; transition:all 0.2s; border-width:2px;">
+          <input type="checkbox" style="display:none;" onchange="this.closest('routine-modal')._toggleExercise('${ex.id}', this.checked)" ${isChecked ? 'checked' : ''}>
+          ${ex.name}
         </label>
       `;
     }).join('');
   }
 
-  /** Renderiza la lista de ejercicios seleccionados con inputs de sets/reps */
+  _toggleExercise(id, checked) {
+    if (checked) {
+      if (!this._selected.some(s => s.exerciseId === id)) {
+        this._selected.push({ exerciseId: id, sets: 3, reps: 10 });
+      }
+    } else {
+      this._selected = this._selected.filter(s => s.exerciseId !== id);
+    }
+    this._renderSelectedList();
+    this._renderExercisePicker();
+  }
+
   _renderSelectedList() {
     const container = this.querySelector('#rt-selected-list');
-    const group     = this.querySelector('#rt-selected-group');
+    const group = this.querySelector('#rt-selected-group');
+    const countEl = this.querySelector('#rt-selected-count');
+    
+    group.style.display = this._selected.length ? 'block' : 'none';
+    if(countEl) countEl.textContent = `${this._selected.length} ejercicios`;
 
-    if (this._selected.length === 0) {
-      group.style.display = 'none';
-      return;
-    }
-
-    group.style.display = 'flex';
-    container.innerHTML = this._selected.map((sel, index) => {
-      const ex    = this._allExercises.find(e => e.id === sel.exerciseId);
-      const name  = ex ? ex.name : 'Ejercicio desconocido';
-      const color = ex ? getMuscleColor(ex.muscleGroup) : '#94a3b8';
-
+    container.innerHTML = this._selected.map((sel, i) => {
+      const ex = this._allExercises.find(e => e.id === sel.exerciseId);
       return `
-        <div class="selected-exercise-item">
-          <span class="selected-exercise-order">${index + 1}</span>
-          <div class="selected-exercise-info">
-            <span class="selected-exercise-name">${name}</span>
-          </div>
-          <div class="selected-exercise-config">
-            <div class="config-field">
-              <input type="number" class="form-input sel-sets" data-id="${sel.exerciseId}"
-                     value="${sel.sets}" min="1" max="20" style="width:52px; padding:6px; text-align:center; font-size:13px;">
-              <span class="config-label">series</span>
+        <div class="glass-card" style="padding:14px 18px; display:flex; align-items:center; justify-content:space-between; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <!-- Order Controls stack -->
+            <div style="display:flex; flex-direction:column; align-items:center; background:rgba(0,0,0,0.2); padding:4px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+               <button class="order-btn" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0; height:12px;" onclick="this.closest('routine-modal')._move(${i}, -1)">
+                 <i class="ph-bold ph-caret-up" style="font-size:12px;"></i>
+               </button>
+               <span style="font-weight:900; color:var(--accent-light); font-size:12px; margin:2px 0;">${i+1}</span>
+               <button class="order-btn" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0; height:12px;" onclick="this.closest('routine-modal')._move(${i}, 1)">
+                 <i class="ph-bold ph-caret-down" style="font-size:12px;"></i>
+               </button>
             </div>
-            <span style="color:var(--text-muted);">Ã—</span>
-            <div class="config-field">
-              <input type="number" class="form-input sel-reps" data-id="${sel.exerciseId}"
-                     value="${sel.reps}" min="1" max="100" style="width:52px; padding:6px; text-align:center; font-size:13px;">
-              <span class="config-label">reps</span>
-            </div>
+            <span style="font-weight:700; font-size:14px; color:#FFFFFF; letter-spacing:-0.01em;">${ex ? ex.name : '?'}</span>
           </div>
-          <button class="btn btn-icon btn-danger" data-remove="${sel.exerciseId}"
-                  style="width:28px; height:28px; padding:4px; flex-shrink:0;" title="Quitar">
-            <i class="ph-bold ph-x" style="font-size:12px;"></i>
-          </button>
+          
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" value="${sel.sets}" min="1" 
+                     style="width:54px; height:36px; text-align:center; background:#111827; border:1px solid var(--border); color:#FFFFFF; border-radius:8px; font-weight:700;"
+                     oninput="this.closest('routine-modal')._updateVal(${i}, 'sets', this.value)">
+              <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">set</span>
+            </div>
+            <span style="color:var(--text-muted); font-weight:bold; font-size:12px;">x</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" value="${sel.reps}" min="1" 
+                     style="width:54px; height:36px; text-align:center; background:#111827; border:1px solid var(--border); color:#FFFFFF; border-radius:8px; font-weight:700;"
+                     oninput="this.closest('routine-modal')._updateVal(${i}, 'reps', this.value)">
+              <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">rep</span>
+            </div>
+            <button class="btn btn-icon btn-danger" style="width:36px; height:36px; margin-left:8px; border-radius:10px;" onclick="this.closest('routine-modal')._toggleExercise('${sel.exerciseId}', false)">
+              <i class="ph-bold ph-trash-simple" style="font-size:16px;"></i>
+            </button>
+          </div>
         </div>
       `;
     }).join('');
   }
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  LOGICA
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-  /**
-   * Agrega o quita un ejercicio de la lista seleccionada.
-   * @param {string} exerciseId
-   * @param {boolean} checked
-   */
-  _toggleExercise(exerciseId, checked) {
-    if (checked) {
-      if (!this._selected.some(s => s.exerciseId === exerciseId)) {
-        this._selected.push({
-          exerciseId: exerciseId,
-          order: this._selected.length + 1,
-          sets: 3,
-          reps: 10
-        });
-      }
-    } else {
-      this._selected = this._selected.filter(s => s.exerciseId !== exerciseId);
-      // Reordena
-      this._selected.forEach((s, i) => s.order = i + 1);
-    }
-
-    this._renderExercisePicker();
+  _move(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= this._selected.length) return;
+    const temp = this._selected[index];
+    this._selected[index] = this._selected[newIndex];
+    this._selected[newIndex] = temp;
     this._renderSelectedList();
   }
 
-  /** Valida y guarda en IndexedDB */
+  _updateVal(index, field, val) {
+    this._selected[index][field] = parseInt(val) || 0;
+  }
+
   async _save() {
-    const name        = this.querySelector('#rt-name').value.trim();
-    const description = this.querySelector('#rt-desc').value.trim();
-
-    if (!name) {
-      this.querySelector('#rt-name').style.borderColor = 'var(--danger)';
-      this.querySelector('#rt-name').focus();
-      return;
-    }
-
-    if (this._selected.length === 0) {
-      alert('Selecciona al menos un ejercicio para la rutina.');
-      return;
-    }
-
-    const data = {
-      name,
-      description,
-      exercises: this._selected.map((s, i) => ({
-        exerciseId: s.exerciseId,
-        order: i + 1,
-        sets: s.sets,
-        reps: s.reps
-      }))
-    };
-
-    try {
-      if (this._routine) {
-        data.id        = this._routine.id;
-        data.createdAt = this._routine.createdAt;
-        await GymDB.routines.update(data);
-      } else {
-        await GymDB.routines.add(data);
-      }
-
-      if (this._onSave) this._onSave();
-      this._close();
-    } catch (err) {
-      console.error('Error al guardar rutina:', err);
-      alert('Error al guardar: ' + err.message);
-    }
+    const name = this.querySelector('#rt-name').value.trim();
+    if (!name || !this._selected.length) return alert("Nombre y ejercicios requeridos.");
+    const data = { name, exercises: this._selected };
+    if (this._routine) data.id = this._routine.id;
+    await GymDB.routines.add(data);
+    if (this._onSave) this._onSave();
+    this._close();
   }
 
-  _close() {
-    this.remove();
-  }
+  _close() { this.remove(); }
 }
 
-// Registro del Custom Element
 customElements.define('routine-modal', RoutineModal);
