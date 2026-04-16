@@ -6,16 +6,22 @@
  *  Soporta operaciones CRUD via modales y dialogos de confirmacion.
  *  Cada tarjeta permite subir una imagen inline.
  *
- *  DOM construido en constructor, datos cargados via loadData().
+ *  DOM construido en connectedCallback, datos cargados via loadData().
  * ============================================================
  */
 
 class ExercisesView extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
 
     /** @type {Array} Lista completa de ejercicios desde IndexedDB */
     this._exercises = [];
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
 
     // Construye el shell estatico
     this.innerHTML = `

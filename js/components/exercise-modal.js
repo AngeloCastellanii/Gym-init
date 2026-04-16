@@ -16,6 +16,7 @@
 class ExerciseModal extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
 
     /** @type {Object|null} Ejercicio siendo editado (null = modo crear) */
     this._exercise = null;
@@ -23,6 +24,11 @@ class ExerciseModal extends HTMLElement {
     this._onSave = null;
     /** @type {string} Data URL base64 de la imagen */
     this._imageData = '';
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
 
     // Construye el DOM del modal
     this.innerHTML = `
@@ -120,6 +126,12 @@ class ExerciseModal extends HTMLElement {
 
     // Guardar
     this.querySelector('#ex-save').addEventListener('click', () => this._save());
+
+    // Aplica la configuracion pendiente si open() se llamo antes de montar
+    if (this._pendingOpen) {
+      this._applyOpen(this._pendingOpen.exercise, this._pendingOpen.onSave);
+      this._pendingOpen = null;
+    }
   }
 
   // ════════════════════════════════════════════
@@ -132,6 +144,17 @@ class ExerciseModal extends HTMLElement {
    * @param {Function} onSave — Callback tras guardar exitosamente
    */
   open(exercise = null, onSave = null) {
+    this._exercise  = exercise;
+    this._onSave    = onSave;
+    this._imageData = '';
+    this._pendingOpen = { exercise, onSave };
+
+    // Monta en el DOM (esto dispara connectedCallback)
+    document.body.appendChild(this);
+  }
+
+  /** Aplica la configuracion del modal tras el montaje */
+  _applyOpen(exercise, onSave) {
     this._exercise  = exercise;
     this._onSave    = onSave;
     this._imageData = '';
@@ -156,7 +179,6 @@ class ExerciseModal extends HTMLElement {
     }
 
     this._updateImagePreview();
-    document.body.appendChild(this);
 
     // Enfoca el campo de nombre automaticamente
     setTimeout(() => this.querySelector('#ex-name').focus(), 100);

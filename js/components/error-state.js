@@ -15,6 +15,12 @@
 class ErrorState extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
 
     // Construye el DOM con mensaje de error por defecto
     this.innerHTML = `

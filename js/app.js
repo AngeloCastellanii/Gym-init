@@ -19,6 +19,13 @@
 class DashboardView extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
+
     this.innerHTML = `
       <div class="page-header">
         <div>
@@ -56,7 +63,7 @@ class DashboardView extends HTMLElement {
           </h3>
           <div class="empty-state" style="padding:32px;">
             <i class="ph ph-clipboard icon" style="font-size:36px;"></i>
-            <p>Las sesiones recientes apareceran aqui (Fase 5)</p>
+            <p>Aun no hay sesiones registradas</p>
           </div>
         </div>
       </div>
@@ -89,7 +96,7 @@ class DashboardView extends HTMLElement {
         <div style="height:220px; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-md); background:rgba(255,255,255,0.015); border:1px dashed var(--border);">
           <p style="color:var(--text-muted); font-size:13px;">
             <i class="ph ph-chart-line" style="margin-right:4px;"></i>
-            Grafico disponible en Fase 5
+            Sin datos suficientes
           </p>
         </div>
       </div>
@@ -106,6 +113,13 @@ class DashboardView extends HTMLElement {
 class SessionsView extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
+
     this.innerHTML = `
       <div class="page-header">
         <h1 class="page-title">Historial de Sesiones</h1>
@@ -114,7 +128,7 @@ class SessionsView extends HTMLElement {
         <div class="glass-card" style="padding:24px;">
           <div class="empty-state">
             <i class="ph-bold ph-calendar-check icon"></i>
-            <p>El historial de sesiones estara disponible en la Fase 6</p>
+            <p>Aun no hay sesiones en el historial</p>
           </div>
         </div>
       </div>
@@ -131,6 +145,13 @@ class SessionsView extends HTMLElement {
 class ActiveSessionView extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
+
     this.innerHTML = `
       <div class="view-content" style="display:flex; align-items:center; justify-content:center; min-height:80vh;">
         <div class="glass-card" style="padding:48px 40px; text-align:center; max-width:440px; width:100%;">
@@ -146,9 +167,7 @@ class ActiveSessionView extends HTMLElement {
             <i class="ph-bold ph-play"></i>
             INICIAR SESION
           </button>
-          <p style="color:var(--text-muted); font-size:12px; margin-top:16px;">
-            <i class="ph ph-info"></i> Tracker completo disponible en Fase 4
-          </p>
+
         </div>
       </div>
     `;

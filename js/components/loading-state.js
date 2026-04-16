@@ -15,6 +15,12 @@
 class LoadingState extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
 
     // Construye el DOM con mensaje por defecto
     this.innerHTML = `

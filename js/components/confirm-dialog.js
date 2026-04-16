@@ -21,6 +21,12 @@ class ConfirmDialog extends HTMLElement {
   constructor() {
     super();
     this._resolvePromise = null;
+    this._initialized = false;
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
 
     // Construye el DOM del modal
     this.innerHTML = `
@@ -51,6 +57,12 @@ class ConfirmDialog extends HTMLElement {
     this.querySelector('#confirm-overlay').addEventListener('click', (e) => {
       if (e.target.id === 'confirm-overlay') this._finish(false);
     });
+
+    // Aplica la configuracion pendiente si show() se llamo antes de montar
+    if (this._pendingConfig) {
+      this._applyConfig(this._pendingConfig);
+      this._pendingConfig = null;
+    }
   }
 
   // ════════════════════════════════════════════
@@ -67,6 +79,18 @@ class ConfirmDialog extends HTMLElement {
    * @returns {Promise<boolean>} true si confirmado, false si cancelado
    */
   show({ title, message, impact, confirmText } = {}) {
+    this._pendingConfig = { title, message, impact, confirmText };
+
+    // Monta en el DOM (esto dispara connectedCallback)
+    document.body.appendChild(this);
+
+    return new Promise(resolve => {
+      this._resolvePromise = resolve;
+    });
+  }
+
+  /** Aplica la configuracion del dialogo a los elementos del DOM */
+  _applyConfig({ title, message, impact, confirmText }) {
     if (title)   this.querySelector('#confirm-title').textContent = title;
     if (message) this.querySelector('#confirm-message').textContent = message;
 
@@ -89,13 +113,6 @@ class ConfirmDialog extends HTMLElement {
       this.querySelector('#confirm-ok').innerHTML =
         `<i class="ph-bold ph-trash"></i> ${confirmText}`;
     }
-
-    // Monta en el DOM
-    document.body.appendChild(this);
-
-    return new Promise(resolve => {
-      this._resolvePromise = resolve;
-    });
   }
 
   // ════════════════════════════════════════════

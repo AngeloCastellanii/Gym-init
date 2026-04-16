@@ -15,6 +15,7 @@
 class RoutineModal extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
 
     /** @type {Object|null} Rutina siendo editada */
     this._routine = null;
@@ -24,6 +25,11 @@ class RoutineModal extends HTMLElement {
     this._allExercises = [];
     /** @type {Array} Ejercicios actualmente seleccionados con sets/reps */
     this._selected = [];
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
 
     // Construye el DOM del modal
     this.innerHTML = `
@@ -115,6 +121,12 @@ class RoutineModal extends HTMLElement {
         this._toggleExercise(removeBtn.dataset.remove, false);
       }
     });
+
+    // Aplica la configuracion pendiente si open() se llamo antes de montar
+    if (this._pendingOpen) {
+      this._applyOpen(this._pendingOpen.routine, this._pendingOpen.onSave);
+      this._pendingOpen = null;
+    }
   }
 
   // ════════════════════════════════════════════
@@ -135,13 +147,6 @@ class RoutineModal extends HTMLElement {
     this._allExercises = await GymDB.exercises.getAll();
 
     if (routine) {
-      // Modo edicion
-      this.querySelector('#rt-modal-title').textContent = 'Editar Rutina';
-      this.querySelector('#rt-name').value = routine.name || '';
-      this.querySelector('#rt-desc').value = routine.description || '';
-      this.querySelector('#rt-save').innerHTML =
-        '<i class="ph-bold ph-floppy-disk"></i> Actualizar Rutina';
-
       // Pre-selecciona los ejercicios existentes
       this._selected = (routine.exercises || []).map(e => ({
         exerciseId: e.exerciseId,
@@ -149,6 +154,26 @@ class RoutineModal extends HTMLElement {
         sets: e.sets || 3,
         reps: e.reps || 10
       }));
+    }
+
+    this._pendingOpen = { routine, onSave };
+
+    // Monta en el DOM (esto dispara connectedCallback)
+    document.body.appendChild(this);
+  }
+
+  /** Aplica la configuracion del modal tras el montaje */
+  _applyOpen(routine, onSave) {
+    this._routine = routine;
+    this._onSave  = onSave;
+
+    if (routine) {
+      // Modo edicion
+      this.querySelector('#rt-modal-title').textContent = 'Editar Rutina';
+      this.querySelector('#rt-name').value = routine.name || '';
+      this.querySelector('#rt-desc').value = routine.description || '';
+      this.querySelector('#rt-save').innerHTML =
+        '<i class="ph-bold ph-floppy-disk"></i> Actualizar Rutina';
     } else {
       // Modo creacion
       this.querySelector('#rt-modal-title').textContent = 'Nueva Rutina';
@@ -159,7 +184,6 @@ class RoutineModal extends HTMLElement {
     this._renderExercisePicker();
     this._renderSelectedList();
 
-    document.body.appendChild(this);
     setTimeout(() => this.querySelector('#rt-name').focus(), 100);
   }
 

@@ -14,7 +14,7 @@ const KG_TO_LB = 2.20462;
  * @returns {'kg'|'lb'}
  */
 function getWeightUnit() {
-  return localStorage.getItem('gym-init-unit') || 'kg';
+  return localStorage.getItem('Gym-Init-unit') || 'kg';
 }
 
 /**
@@ -22,7 +22,7 @@ function getWeightUnit() {
  * @param {'kg'|'lb'} unit
  */
 function setWeightUnit(unit) {
-  localStorage.setItem('gym-init-unit', unit);
+  localStorage.setItem('Gym-Init-unit', unit);
 }
 
 /**
@@ -67,7 +67,7 @@ function formatDate(date) {
   const num = d.getDate();
   const month = MONTH_NAMES[d.getMonth()];
   const hours = String(d.getHours()).padStart(2, '0');
-  const mins  = String(d.getMinutes()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
   return `${day} ${num} ${month}, ${hours}:${mins}`;
 }
 
@@ -105,7 +105,7 @@ function getCalendarDay(date) {
  */
 function formatDuration(ms) {
   const totalSec = Math.floor(ms / 1000);
-  const hrs  = Math.floor(totalSec / 3600);
+  const hrs = Math.floor(totalSec / 3600);
   const mins = Math.floor((totalSec % 3600) / 60);
   const secs = totalSec % 60;
 
@@ -168,14 +168,14 @@ function fallback(value, fb = 'Sin descripcion') {
 
 /** Mapa de colores por grupo muscular (para badges y acentos) */
 const MUSCLE_COLORS = {
-  'Pecho':    '#f87171',
-  'Espalda':  '#60a5fa',
-  'Piernas':  '#34d399',
-  'Hombros':  '#fbbf24',
-  'Biceps':   '#a78bfa',
-  'Triceps':  '#f472b6',
-  'Core':     '#fb923c',
-  'Otro':     '#94a3b8'
+  'Pecho': '#f87171',
+  'Espalda': '#60a5fa',
+  'Piernas': '#34d399',
+  'Hombros': '#fbbf24',
+  'Biceps': '#a78bfa',
+  'Triceps': '#f472b6',
+  'Core': '#fb923c',
+  'Otro': '#94a3b8'
 };
 
 /**

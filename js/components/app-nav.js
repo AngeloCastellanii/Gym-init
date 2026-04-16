@@ -18,17 +18,23 @@
 class AppNav extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
 
     // Configuracion de los elementos de navegacion
     this._items = [
-      { hash: '#dashboard',   icon: 'ph-chart-line-up',   label: 'Dashboard'  },
-      { hash: '#exercises',   icon: 'ph-barbell',         label: 'Ejercicios' },
-      { hash: '#routines',    icon: 'ph-clipboard-text',  label: 'Rutinas'    },
-      { hash: '#sessions',    icon: 'ph-calendar-check',  label: 'Sesiones'   },
-      { hash: '#session/new', icon: 'ph-play-circle',     label: 'Entrenar'   },
+      { hash: '#dashboard', icon: 'ph-chart-line-up', label: 'Dashboard' },
+      { hash: '#exercises', icon: 'ph-barbell', label: 'Ejercicios' },
+      { hash: '#routines', icon: 'ph-clipboard-text', label: 'Rutinas' },
+      { hash: '#sessions', icon: 'ph-calendar-check', label: 'Sesiones' },
+      { hash: '#session/new', icon: 'ph-play-circle', label: 'Entrenar' },
     ];
+  }
 
-    // Construye el DOM en el constructor (requisito del proyecto)
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
+
+    // Construye el DOM
     this.innerHTML = this._buildHTML();
 
     // Delegacion de eventos: maneja todos los clics en items de nav
@@ -78,7 +84,7 @@ class AppNav extends HTMLElement {
             <div class="sidebar-logo-icon">
               <i class="ph-fill ph-barbell"></i>
             </div>
-            <span class="sidebar-logo-text">Gym<span class="logo-accent">init</span></span>
+            <span class="sidebar-logo-text">Gym-<span class="logo-accent">Init</span></span>
           </a>
         </div>
         <div class="sidebar-divider"></div>
@@ -90,7 +96,7 @@ class AppNav extends HTMLElement {
         <div class="sidebar-footer">
           <div class="sidebar-divider"></div>
           <p class="sidebar-footer-text">
-            <i class="ph ph-code"></i> Gym Init v1.0
+            <i class="ph ph-code"></i> Gym-Init v1.0
           </p>
         </div>
       </aside>

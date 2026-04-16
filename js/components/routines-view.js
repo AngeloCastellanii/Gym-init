@@ -6,18 +6,24 @@
  *  de cuarto de circulo. Cada tarjeta muestra el conteo de ejercicios,
  *  sus nombres, y tiene acciones de Iniciar, Editar y Eliminar.
  *
- *  DOM construido en constructor, datos cargados via loadData().
+ *  DOM construido en connectedCallback, datos cargados via loadData().
  * ============================================================
  */
 
 class RoutinesView extends HTMLElement {
   constructor() {
     super();
+    this._initialized = false;
 
     /** @type {Array} Todas las rutinas */
     this._routines = [];
     /** @type {Array} Todos los ejercicios (para busqueda de nombres) */
     this._exercises = [];
+  }
+
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
 
     // Construye el shell estatico
     this.innerHTML = `
