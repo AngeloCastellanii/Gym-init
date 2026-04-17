@@ -14,6 +14,7 @@ class AppNav extends HTMLElement {
       { hash: '#routines', icon: 'ph-clipboard-text', label: 'Rutinas' },
       { hash: '#sessions', icon: 'ph-calendar-check', label: 'Sesiones' },
       { hash: '#session/new', icon: 'ph-play-circle', label: 'Entrenar' },
+      { hash: '#profile', icon: 'ph-user-circle', label: 'Perfil' },
     ];
   }
 
@@ -22,6 +23,17 @@ class AppNav extends HTMLElement {
     this._initialized = true;
 
     this.innerHTML = this._buildHTML();
+
+    // Mostrar nombre del perfil en el sidebar
+    try {
+      const profile = JSON.parse(localStorage.getItem('gym-profile') || '{}');
+      if (profile.name) {
+        const nameEl   = this.querySelector('#nav-username');
+        const avatarEl = this.querySelector('#nav-avatar');
+        if (nameEl)   nameEl.textContent = profile.name;
+        if (avatarEl) avatarEl.textContent = profile.name.charAt(0).toUpperCase();
+      }
+    } catch (_) {}
 
     this.addEventListener('click', (e) => {
       const link = e.target.closest('[data-route]');
@@ -45,7 +57,6 @@ class AppNav extends HTMLElement {
     `).join('');
 
     return `
-      <!-- Sidebar (Desktop) -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <a class="sidebar-logo" data-route="#dashboard" href="#dashboard">
@@ -61,8 +72,19 @@ class AppNav extends HTMLElement {
         <div class="sidebar-divider"></div>
         <nav class="sidebar-menu">${navItemsHTML}</nav>
         <div style="flex:1;"></div>
-        <div class="sidebar-footer">
-          <p class="sidebar-footer-text"><i class="ph ph-code"></i> Gym Init v1.0</p>
+        <div class="sidebar-divider"></div>
+        <!-- Acceso rapido al perfil -->
+        <div style="padding:12px;">
+          <a class="nav-item" data-route="#profile" href="#profile" aria-label="Perfil" id="sidebar-profile-link"
+             style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05);">
+            <div style="width:32px; height:32px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#fff; flex-shrink:0; text-transform:uppercase;" id="nav-avatar">
+              <i class="ph-fill ph-user"></i>
+            </div>
+            <div style="min-width:0;">
+              <span id="nav-username" style="font-size:13px; font-weight:700; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">Mi Perfil</span>
+              <span style="font-size:10px; color:var(--text-muted);">Configuracion</span>
+            </div>
+          </a>
         </div>
       </aside>
 

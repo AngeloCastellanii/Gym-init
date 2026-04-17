@@ -12,6 +12,7 @@ class Router {
       '#routines':    'routines-view',
       '#sessions':    'sessions-view',
       '#session/new': 'active-session-view',
+      '#profile':     'profile-view',
     };
     // ID correcto del contenedor principal definido en index.html
     this.outlet = document.getElementById('app-outlet');
