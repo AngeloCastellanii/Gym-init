@@ -452,7 +452,31 @@ class ActiveSessionView extends HTMLElement {
   }
 
   _updVal(ei, si, f, v) {
-    this._logs[ei].sets[si][f] = parseFloat(v) || 0;
+    const val = parseFloat(v) || 0;
+    this._logs[ei].sets[si][f] = val;
+
+    // Si es la primera serie, propagar a todas las siguientes no completadas
+    if (si === 0) {
+      this._logs[ei].sets.forEach((set, idx) => {
+        if (idx > 0 && !set.done) {
+          set[f] = val;
+        }
+      });
+      // Re-renderizar para reflejar los nuevos valores en el DOM
+      const grid = this.querySelector('#active-tracker-list');
+      if (grid) {
+        const card = grid.querySelectorAll('.glass-card')[ei];
+        if (card) {
+          const setsContainer = card.querySelector(`#ex-${ei}-sets`);
+          if (setsContainer) {
+            setsContainer.innerHTML = this._logs[ei].sets
+              .map((s, sIdx) => this._renderSetRow(ei, sIdx, s))
+              .join('');
+          }
+        }
+      }
+    }
+
     this._saveState();
   }
 
