@@ -1,9 +1,13 @@
 /**
  * ============================================================
  *  <active-session-view> — Tracker de Entrenamiento
- *  Soporta dos modos: Rutina (series/reps) y Libre (por tiempo)
+ *  Soporta: Modo Rutina, Modo Libre, Persistencia entre vistas
+ *  y sugerencias de peso basadas en historial.
  * ============================================================
  */
+
+// Clave en sessionStorage para persistir el estado
+const SESSION_STATE_KEY = 'gym-active-session';
 
 class ActiveSessionView extends HTMLElement {
   constructor() {
@@ -15,21 +19,109 @@ class ActiveSessionView extends HTMLElement {
     this._startTime = 0;
     this._timerInterval = null;
     this._logs = [];
-    // Sesion libre
+    this._lastWeights = {}; // { exerciseId: { weight, reps } }
     this._freeSessionName = '';
     this._freeNotes = '';
+    this._phase = 'setup'; // 'setup' | 'active-routine' | 'active-free'
   }
 
   connectedCallback() {
     if (this._initialized) return;
     this._initialized = true;
-    this._renderSetup();
+
+    // Intentar restaurar sesion activa guardada
+    const saved = this._loadState();
+    if (saved && saved.phase && saved.phase !== 'setup') {
+      this._restoreFromState(saved);
+    } else {
+      this._renderSetup();
+    }
   }
 
   disconnectedCallback() {
-    if (this._timerInterval) clearInterval(this._timerInterval);
+    // NO limpiar el timer ni el estado — solo pausamos la visualizacion
+    // El timer real se recalcula desde _startTime al restaurar
+    if (this._timerInterval) {
+      clearInterval(this._timerInterval);
+      this._timerInterval = null;
+    }
   }
 
+  // ======================================================
+  //  PERSISTENCIA (sessionStorage)
+  // ======================================================
+  _saveState() {
+    const state = {
+      phase:             this._phase,
+      mode:              this._mode,
+      startTime:         this._startTime,
+      logs:              this._logs,
+      freeSessionName:   this._freeSessionName,
+      freeNotes:         this._freeNotes,
+      selectedRoutineId: this._selectedRoutine ? this._selectedRoutine.id : null
+    };
+    sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify(state));
+  }
+
+  _loadState() {
+    try {
+      return JSON.parse(sessionStorage.getItem(SESSION_STATE_KEY) || 'null');
+    } catch { return null; }
+  }
+
+  _clearState() {
+    sessionStorage.removeItem(SESSION_STATE_KEY);
+  }
+
+  async _restoreFromState(state) {
+    this._phase     = state.phase;
+    this._mode      = state.mode;
+    this._startTime = state.startTime;
+    this._logs      = state.logs || [];
+    this._freeSessionName = state.freeSessionName || '';
+    this._freeNotes       = state.freeNotes || '';
+
+    if (state.phase === 'active-routine' && state.selectedRoutineId) {
+      try {
+        this._selectedRoutine = await GymDB.routines.getWithExercises(state.selectedRoutineId);
+      } catch { /* si falla, setup */ }
+      this._renderActive();
+      this._startTimer('session-timer');
+    } else if (state.phase === 'active-free') {
+      this._renderFreeActive();
+      this._startTimer('free-timer');
+    } else {
+      this._renderSetup();
+    }
+  }
+
+  // ======================================================
+  //  HISTORIAL DE PESOS (sugerencias)
+  // ======================================================
+  async _buildLastWeightsMap() {
+    try {
+      const sessions = await GymDB.sessions.getAll();
+      // Ordenar de más reciente a más antigua
+      sessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const map = {};
+      for (const sess of sessions) {
+        if (!sess.logs) continue;
+        for (const log of sess.logs) {
+          if (map[log.exerciseId]) continue; // ya tenemos el más reciente
+          const doneSets = (log.sets || []).filter(s => s.done !== false);
+          if (doneSets.length > 0) {
+            const lastSet = doneSets[doneSets.length - 1];
+            map[log.exerciseId] = { weight: lastSet.weight, reps: lastSet.reps };
+          }
+        }
+      }
+      this._lastWeights = map;
+    } catch { this._lastWeights = {}; }
+  }
+
+  // ======================================================
+  //  SETUP
+  // ======================================================
   async loadData() {
     try {
       this._routines = await GymDB.routines.getAll();
@@ -38,6 +130,7 @@ class ActiveSessionView extends HTMLElement {
   }
 
   _renderSetup() {
+    this._phase = 'setup';
     this.innerHTML = `
       <div class="page-header">
         <h1 class="page-title">Iniciar Entrenamiento</h1>
@@ -84,16 +177,28 @@ class ActiveSessionView extends HTMLElement {
       </div>
     `;
 
-    // Eventos de modo
     this.querySelector('#mode-routine').addEventListener('click', () => this._setMode('routine'));
-    this.querySelector('#mode-free').addEventListener('click', () => this._setMode('free'));
+    this.querySelector('#mode-free').addEventListener('click',    () => this._setMode('free'));
     this.querySelector('#btn-start-session').addEventListener('click', () => this._startSession());
+    this._populateRoutineSelector();
+  }
+
+  _populateRoutineSelector() {
+    const select = this.querySelector('#session-routine-select');
+    if (!select || !this._routines.length) return;
+    select.innerHTML = '<option value="">— Elegir rutina —</option>';
+    this._routines.forEach(rt => {
+      const opt = document.createElement('option');
+      opt.value = rt.id;
+      opt.textContent = rt.name;
+      select.appendChild(opt);
+    });
   }
 
   _setMode(mode) {
     this._mode = mode;
-    const routineCard = this.querySelector('#mode-routine');
-    const freeCard    = this.querySelector('#mode-free');
+    const routineCard  = this.querySelector('#mode-routine');
+    const freeCard     = this.querySelector('#mode-free');
     const panelRoutine = this.querySelector('#panel-routine');
     const panelFree    = this.querySelector('#panel-free');
 
@@ -118,17 +223,6 @@ class ActiveSessionView extends HTMLElement {
     }
   }
 
-  _populateRoutineSelector() {
-    const select = this.querySelector('#session-routine-select');
-    if (!select) return;
-    this._routines.forEach(rt => {
-      const opt = document.createElement('option');
-      opt.value = rt.id;
-      opt.textContent = rt.name;
-      select.appendChild(opt);
-    });
-  }
-
   async _startSession() {
     if (this._mode === 'free') {
       const name = this.querySelector('#free-name').value.trim();
@@ -136,6 +230,8 @@ class ActiveSessionView extends HTMLElement {
       this._freeSessionName = name;
       this._freeNotes = this.querySelector('#free-notes').value.trim();
       this._startTime = Date.now();
+      this._phase = 'active-free';
+      this._saveState();
       this._renderFreeActive();
       this._startTimer('free-timer');
     } else {
@@ -143,13 +239,30 @@ class ActiveSessionView extends HTMLElement {
       if (!id) return alert('Selecciona una rutina.');
       this._selectedRoutine = await GymDB.routines.getWithExercises(id);
       if (!this._selectedRoutine) return;
-      this._logs = this._selectedRoutine.exercises.map(entry => ({
-        exerciseId: entry.exerciseId,
-        exerciseName: entry.exercise.name,
-        muscleGroup: entry.exercise.muscleGroup,
-        sets: Array.from({ length: entry.sets || 3 }, () => ({ weight: 0, reps: entry.reps || 10, done: false }))
-      }));
+
+      // Cargar historial de pesos antes de construir los logs
+      await this._buildLastWeightsMap();
+
+      this._logs = this._selectedRoutine.exercises.map(entry => {
+        const lastData = this._lastWeights[entry.exerciseId];
+        const suggestedWeight = lastData ? lastData.weight : 0;
+        const suggestedReps   = lastData ? lastData.reps   : (entry.reps || 10);
+        return {
+          exerciseId:   entry.exerciseId,
+          exerciseName: entry.exercise ? entry.exercise.name : 'Ejercicio',
+          muscleGroup:  entry.exercise ? entry.exercise.muscleGroup : '',
+          lastData,
+          sets: Array.from({ length: entry.sets || 3 }, () => ({
+            weight: suggestedWeight,
+            reps:   suggestedReps,
+            done:   false
+          }))
+        };
+      });
+
       this._startTime = Date.now();
+      this._phase = 'active-routine';
+      this._saveState();
       this._renderActive();
       this._startTimer('session-timer');
     }
@@ -174,7 +287,7 @@ class ActiveSessionView extends HTMLElement {
 
       <div class="view-content" style="max-width:520px; margin:0 auto;">
         <div class="glass-card" style="padding:40px; text-align:center; margin-bottom:24px;">
-          <div style="width:80px; height:80px; border-radius:50%; border:3px solid var(--accent-light); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; animation:pulse-glow 2s infinite;">
+          <div style="width:80px; height:80px; border-radius:50%; border:3px solid var(--accent-light); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
             <i class="ph-fill ph-timer" style="font-size:40px; color:var(--accent-light);"></i>
           </div>
           <p style="font-size:15px; color:var(--text-secondary);">El tiempo corre. Dale todo.</p>
@@ -185,16 +298,24 @@ class ActiveSessionView extends HTMLElement {
         </div>
 
         <div style="display:flex; gap:12px;">
-          <button class="btn btn-ghost" onclick="if(confirm('Cancelar sesion?')) window.location.hash='#dashboard'" style="flex:1; justify-content:center;">
-            Cancelar
-          </button>
+          <button class="btn btn-ghost" id="btn-cancel-free" style="flex:1; justify-content:center;">Cancelar</button>
           <button class="btn btn-success" id="btn-finish-free" style="flex:2; justify-content:center; padding:18px; font-size:16px; font-weight:800;">
             <i class="ph-bold ph-flag-checkered"></i> FINALIZAR
           </button>
         </div>
       </div>
     `;
+    this.querySelector('#btn-cancel-free').addEventListener('click', () => {
+      if (confirm('Cancelar sesion? El progreso se perdera.')) {
+        this._clearState();
+        if (this._timerInterval) clearInterval(this._timerInterval);
+        window.location.hash = '#dashboard';
+      }
+    });
     this.querySelector('#btn-finish-free').addEventListener('click', () => this._finishFree());
+    // Actualizar timer inmediatamente con tiempo transcurrido real
+    const timerEl = this.querySelector('#free-timer');
+    if (timerEl) timerEl.textContent = formatDuration(Date.now() - this._startTime);
   }
 
   async _finishFree() {
@@ -203,12 +324,13 @@ class ActiveSessionView extends HTMLElement {
     const finalNotes = notesEl ? notesEl.value.trim() : '';
     try {
       await GymDB.sessions.add({
-        type: 'free',
-        name: this._freeSessionName,
-        notes: finalNotes || this._freeNotes,
+        type:     'free',
+        name:     this._freeSessionName,
+        notes:    finalNotes || this._freeNotes,
         duration: dur,
-        logs: []
+        logs:     []
       });
+      this._clearState();
       if (this._timerInterval) clearInterval(this._timerInterval);
       window.location.hash = '#sessions';
     } catch (err) {
@@ -224,7 +346,7 @@ class ActiveSessionView extends HTMLElement {
     this.innerHTML = `
       <div class="page-header" style="align-items:flex-start; margin-bottom:24px;">
         <div style="flex:1;">
-          <h1 class="page-title" style="font-size:22px; color:#FFFFFF;">${this._selectedRoutine.name}</h1>
+          <h1 class="page-title" style="font-size:22px; color:#FFFFFF;">${this._selectedRoutine ? this._selectedRoutine.name : 'Entrenamiento'}</h1>
           <p class="page-subtitle">Entrenando • <span id="session-progress" style="color:var(--accent-light); font-weight:700;">0 series completadas</span></p>
         </div>
         <div style="text-align:right; background:rgba(255,255,255,0.03); padding:10px 16px; border-radius:12px; border:1px solid var(--border);">
@@ -236,18 +358,36 @@ class ActiveSessionView extends HTMLElement {
       <div class="view-content" id="active-tracker-list">
         ${this._logs.map((log, i) => this._renderExCard(log, i)).join('')}
         <div style="display:flex; gap:16px; margin-top:24px;">
-          <button class="btn btn-ghost" onclick="if(confirm('Cancelar sesion?')) window.location.hash='#dashboard'" style="flex:1; justify-content:center;">Cancelar</button>
+          <button class="btn btn-ghost" id="btn-cancel-routine" style="flex:1; justify-content:center;">Cancelar</button>
           <button class="btn btn-success" id="btn-finish" style="flex:2; justify-content:center; padding:18px; font-size:16px; font-weight:800;">
             <i class="ph-bold ph-flag-checkered"></i> FINALIZAR Y GUARDAR
           </button>
         </div>
       </div>
     `;
+    this.querySelector('#btn-cancel-routine').addEventListener('click', () => {
+      if (confirm('Cancelar sesion? El progreso se perdera.')) {
+        this._clearState();
+        if (this._timerInterval) clearInterval(this._timerInterval);
+        window.location.hash = '#dashboard';
+      }
+    });
     this.querySelector('#btn-finish').addEventListener('click', () => this._finish());
+    // Actualizar timer con tiempo real transcurrido
+    const timerEl = this.querySelector('#session-timer');
+    if (timerEl) timerEl.textContent = formatDuration(Date.now() - this._startTime);
     this._updateProgress();
   }
 
   _renderExCard(log, i) {
+    const lastData = log.lastData;
+    const lastHint = lastData
+      ? `<span style="font-size:11px; color:var(--accent-light); font-weight:600; display:flex; align-items:center; gap:4px; margin-top:2px;">
+           <i class="ph-bold ph-clock-counter-clockwise" style="font-size:10px;"></i>
+           Última vez: ${lastData.weight} ${unitLabel()} × ${lastData.reps} reps
+         </span>`
+      : `<span style="font-size:11px; color:var(--text-muted); margin-top:2px;">Sin historial aún</span>`;
+
     return `
       <div class="glass-card view-enter" style="padding:0; overflow:hidden; margin-bottom:20px; border-color:rgba(255,255,255,0.06);">
         <div style="padding:14px 20px; background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-subtle);">
@@ -261,7 +401,10 @@ class ActiveSessionView extends HTMLElement {
                 <i class="ph-bold ph-caret-down" style="font-size:12px;"></i>
               </button>
             </div>
-            <h3 style="font-size:16px; font-weight:700; color:#FFFFFF;">${log.exerciseName}</h3>
+            <div>
+              <h3 style="font-size:16px; font-weight:700; color:#FFFFFF;">${log.exerciseName}</h3>
+              ${lastHint}
+            </div>
           </div>
           <span class="badge badge-slate" style="opacity:0.8;">${log.muscleGroup}</span>
         </div>
@@ -303,25 +446,36 @@ class ActiveSessionView extends HTMLElement {
     const nIdx = idx + dir;
     if (nIdx < 0 || nIdx >= this._logs.length) return;
     [this._logs[idx], this._logs[nIdx]] = [this._logs[nIdx], this._logs[idx]];
+    this._saveState();
     this._renderActive();
+    this._startTimer('session-timer');
   }
 
-  _updVal(ei, si, f, v) { this._logs[ei].sets[si][f] = parseFloat(v) || 0; }
+  _updVal(ei, si, f, v) {
+    this._logs[ei].sets[si][f] = parseFloat(v) || 0;
+    this._saveState();
+  }
 
   _toggleSet(ei, si) {
     this._logs[ei].sets[si].done = !this._logs[ei].sets[si].done;
+    this._saveState();
     this._renderActive();
+    this._startTimer('session-timer');
   }
 
   _addSet(ei) {
     const last = this._logs[ei].sets.slice(-1)[0];
     this._logs[ei].sets.push({ weight: last ? last.weight : 0, reps: last ? last.reps : 10, done: false });
+    this._saveState();
     this._renderActive();
+    this._startTimer('session-timer');
   }
 
   _delSet(ei, si) {
     this._logs[ei].sets.splice(si, 1);
+    this._saveState();
     this._renderActive();
+    this._startTimer('session-timer');
   }
 
   _updateProgress() {
@@ -332,6 +486,7 @@ class ActiveSessionView extends HTMLElement {
   }
 
   _startTimer(elId) {
+    if (this._timerInterval) clearInterval(this._timerInterval);
     this._timerInterval = setInterval(() => {
       const el = this.querySelector('#' + elId);
       if (el) el.textContent = formatDuration(Date.now() - this._startTime);
@@ -351,11 +506,12 @@ class ActiveSessionView extends HTMLElement {
 
     try {
       await GymDB.sessions.add({
-        type: 'routine',
+        type:      'routine',
         routineId: this._selectedRoutine.id,
-        duration: dur,
-        logs: finalLogs
+        duration:  dur,
+        logs:      finalLogs
       });
+      this._clearState();
       if (this._timerInterval) clearInterval(this._timerInterval);
       window.location.hash = '#sessions';
     } catch (err) {

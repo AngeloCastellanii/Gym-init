@@ -103,6 +103,34 @@ class ProfileView extends HTMLElement {
           </div>
         </div>
 
+        <!-- ── Peso Corporal ── -->
+        <div class="glass-card" style="padding:28px;" id="bw-card">
+          <h3 style="font-size:15px; font-weight:700; color:#FFFFFF; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-scales" style="color:#10b981;"></i>
+            Registro de Peso Corporal
+          </h3>
+
+          <!-- Registro de hoy -->
+          <div style="display:flex; gap:12px; align-items:flex-end; margin-bottom:20px;">
+            <div class="form-group" style="flex:1; margin-bottom:0;">
+              <label class="form-label">Tu peso hoy</label>
+              <div style="position:relative; margin-top:8px;">
+                <input class="form-input" id="bw-input" type="number" step="0.1" min="30" max="300"
+                  placeholder="Ej: 75.5" style="background:#0B0E14; padding-right:40px;">
+                <span style="position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:11px; font-weight:800; color:var(--text-muted);">${unit}</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-log-weight" style="height:44px; padding:0 20px; flex-shrink:0;">
+              <i class="ph-bold ph-plus"></i> Guardar
+            </button>
+          </div>
+
+          <!-- Historial visual -->
+          <div id="bw-history-wrap">
+            <p style="font-size:12px; color:var(--text-muted); font-style:italic;">Cargando historial...</p>
+          </div>
+        </div>
+
         <!-- ── Grupos Musculares / Actividades ── -->
         <div class="glass-card" style="padding:28px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
@@ -243,10 +271,12 @@ class ProfileView extends HTMLElement {
         const allSessions  = await GymDB.sessions.getAll();
         const allRoutines  = await GymDB.routines.getAll();
         const allExercises = await GymDB.exercises.getAll();
+        const allBw        = await GymDB.bodyweight.getAll();
         await Promise.all([
           ...allSessions.map(s  => GymDB.sessions.delete(s.id)),
           ...allRoutines.map(r  => GymDB.routines.delete(r.id)),
-          ...allExercises.map(e => GymDB.exercises.delete(e.id))
+          ...allExercises.map(e => GymDB.exercises.delete(e.id)),
+          ...allBw.map(b        => GymDB._delete('bodyweight', b.id))
         ]);
         // Limpiar localStorage (excepto preferencias)
         const unit    = localStorage.getItem('gym-weight-unit');
@@ -265,6 +295,113 @@ class ProfileView extends HTMLElement {
         alert('Error al borrar los datos: ' + err.message);
       }
     });
+
+    /* Registrar peso corporal */
+    const btnLogWeight = this.querySelector('#btn-log-weight');
+    if (btnLogWeight) {
+      btnLogWeight.addEventListener('click', async () => {
+        const input = this.querySelector('#bw-input');
+        const val = parseFloat(input ? input.value : '');
+        if (!val || val < 20 || val > 500) {
+          alert('Ingresa un peso válido (entre 20 y 500).');
+          return;
+        }
+        await GymDB.bodyweight.logToday(val);
+        input.value = '';
+        // feedback
+        btnLogWeight.innerHTML = '<i class="ph-bold ph-check"></i> Guardado';
+        btnLogWeight.style.background = 'var(--success)';
+        setTimeout(() => {
+          btnLogWeight.innerHTML = '<i class="ph-bold ph-plus"></i> Guardar';
+          btnLogWeight.style.background = '';
+        }, 1500);
+        this._loadBwHistory();
+      });
+    }
+
+    // Cargar historial al montar
+    this._loadBwHistory();
+  }
+
+  async _loadBwHistory() {
+    const wrap = this.querySelector('#bw-history-wrap');
+    if (!wrap) return;
+
+    try {
+      const records = await GymDB.bodyweight.getLastDays(30);
+      if (records.length === 0) {
+        wrap.innerHTML = `<p style="font-size:12px; color:var(--text-muted); font-style:italic;">Aun no tienes registros. Empieza hoy!</p>`;
+        return;
+      }
+
+      const unit = getWeightUnit();
+      const weights = records.map(r => r.weight);
+      const minW = Math.min(...weights) - 1;
+      const maxW = Math.max(...weights) + 1;
+      const range = maxW - minW || 1;
+      const latest = records[records.length - 1];
+      const first  = records[0];
+      const diff   = (latest.weight - first.weight).toFixed(1);
+      const diffColor = diff > 0 ? '#f97316' : diff < 0 ? '#10b981' : 'var(--text-muted)';
+      const diffLabel = diff > 0 ? `+${diff}` : `${diff}`;
+
+      // Mini resumen
+      const summaryHTML = `
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px;">
+          <div style="flex:1; min-width:80px; text-align:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+            <p style="font-size:20px; font-weight:800; color:#FFF;">${latest.weight}</p>
+            <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Hoy</p>
+          </div>
+          <div style="flex:1; min-width:80px; text-align:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+            <p style="font-size:20px; font-weight:800; color:#FFF;">${Math.min(...weights).toFixed(1)}</p>
+            <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Mínimo</p>
+          </div>
+          <div style="flex:1; min-width:80px; text-align:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+            <p style="font-size:20px; font-weight:800; color:${diffColor};">${diffLabel}</p>
+            <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Cambio</p>
+          </div>
+        </div>
+      `;
+
+      // Grafica SVG de barras
+      const n     = records.length;
+      const W     = 480, H = 100, padL = 8, padR = 8, padT = 8, padB = 24;
+      const bW    = Math.max(4, Math.floor((W - padL - padR) / n) - 2);
+      const gap   = Math.floor((W - padL - padR - bW * n) / Math.max(n - 1, 1));
+
+      const bars = records.map((r, i) => {
+        const x = padL + i * (bW + gap);
+        const bH = ((r.weight - minW) / range) * (H - padT - padB);
+        const y  = H - padB - bH;
+        const isLast = i === n - 1;
+        return `
+          <rect x="${x}" y="${y.toFixed(1)}" width="${bW}" height="${bH.toFixed(1)}"
+            fill="${isLast ? '#2563EB' : 'rgba(37,99,235,0.35)'}" rx="2"/>
+          ${i % Math.max(1, Math.floor(n / 5)) === 0 || isLast ? `
+            <text x="${x + bW/2}" y="${H - 4}" text-anchor="middle" fill="rgba(255,255,255,0.3)"
+              font-size="8" font-family="Inter,sans-serif">${r.date.slice(5)}</text>
+          ` : ''}
+          ${isLast ? `
+            <text x="${x + bW/2}" y="${y - 4}" text-anchor="middle" fill="#fff"
+              font-size="9" font-weight="700" font-family="Inter,sans-serif">${r.weight}</text>
+          ` : ''}
+        `;
+      }).join('');
+
+      const svgChart = `
+        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px; border:1px solid var(--border); overflow-x:auto;">
+          <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            ${bars}
+          </svg>
+        </div>
+        <p style="font-size:10px; color:var(--text-muted); margin-top:6px; text-align:right;">Últimos ${n} registros — ${unit}</p>
+      `;
+
+      wrap.innerHTML = summaryHTML + svgChart;
+    } catch (err) {
+      console.error('Error loading bw history:', err);
+      wrap.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">Error al cargar el historial.</p>`;
+    }
   }
 
   _updateUnitButtons(unit) {

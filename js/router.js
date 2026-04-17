@@ -45,6 +45,27 @@ class Router {
     // Limpiar contenido anterior
     this.outlet.innerHTML = '';
 
+    // Mostrar banner si hay sesion activa y estamos en otra vista
+    if (componentName !== 'active-session-view') {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('gym-active-session') || 'null');
+        if (saved && saved.phase && saved.phase !== 'setup') {
+          const banner = document.createElement('div');
+          banner.id = 'active-session-banner';
+          banner.innerHTML = `
+            <div style="background:var(--accent); color:#fff; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; gap:12px; flex-wrap:wrap;">
+              <span style="display:flex; align-items:center; gap:8px;">
+                <i class="ph-fill ph-timer" style="font-size:18px;"></i>
+                Sesion de entrenamiento activa
+              </span>
+              <a href="#session/new" style="color:#fff; text-decoration:underline; white-space:nowrap; cursor:pointer;">Volver al tracker →</a>
+            </div>
+          `;
+          this.outlet.appendChild(banner);
+        }
+      } catch { /* ignore */ }
+    }
+
     // Crear e insertar el nuevo componente
     const view = document.createElement(componentName);
     this.outlet.appendChild(view);
@@ -64,6 +85,7 @@ class Router {
 
     window.scrollTo(0, 0);
   }
+
 }
 
 const appRouter = new Router();

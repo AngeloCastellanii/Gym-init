@@ -1,7 +1,7 @@
 /**
- * ============================================================
+ *
  *  <app-nav> — Componente principal de navegacion
- * ============================================================
+ *
  */
 
 class AppNav extends HTMLElement {

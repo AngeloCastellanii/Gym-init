@@ -2,10 +2,7 @@
 node_modules/
 .DS_Store
 
-# Diseño y Planes (Privado)
-carpetas para md/
-*.md
-
 # IDEs
 .vscode/
 .idea/
+
