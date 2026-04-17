@@ -4,8 +4,22 @@
  * ============================================================
  */
 
-// --- Grupos Musculares (Dinamicos + Personalizados) ---
-const DEFAULT_MUSCLES = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Biceps', 'Triceps', 'Core', 'Cardio'];
+// --- Grupos Musculares exactos (coinciden con el seed) ---
+const DEFAULT_MUSCLES = [
+  'Pectorales',
+  'Dorsales',
+  'Deltoides (Hombros)',
+  'B\u00edceps',
+  'Tr\u00edceps',
+  'Cu\u00e1driceps',
+  'Isquiotibiales (Femorales)',
+  'Gl\u00fateos',
+  'Pantorrillas (Gemelos)',
+  'Abdominales',
+  'Lumbares',
+  'Trapecios',
+  'Antebrazos'
+];
 
 function getCustomMuscles() {
   try { return JSON.parse(localStorage.getItem('gym-custom-muscles') || '[]'); } 
@@ -32,6 +46,22 @@ Object.defineProperty(window, 'MUSCLE_GROUPS', {
   get: () => [...DEFAULT_MUSCLES, ...getCustomMuscles()],
   configurable: true
 });
+
+// Agrupaciones por region corporal (para filtros de UI)
+const MUSCLE_CATEGORIES = {
+  'Pecho':    ['Pectorales'],
+  'Espalda':  ['Dorsales', 'Lumbares', 'Trapecios'],
+  'Hombros':  ['Deltoides (Hombros)'],
+  'Brazos':   ['B\u00edceps', 'Tr\u00edceps', 'Antebrazos'],
+  'Pierna':   ['Cu\u00e1driceps', 'Isquiotibiales (Femorales)', 'Gl\u00fateos', 'Pantorrillas (Gemelos)'],
+  'Core':     ['Abdominales', 'Lumbares']
+};
+
+function getMuscleCategories(muscleGroup) {
+  return Object.entries(MUSCLE_CATEGORIES)
+    .filter(([, muscles]) => muscles.includes(muscleGroup))
+    .map(([cat]) => cat);
+}
 
 // --- Herramientas de Interfaz (UI Helpers) ---
 /** Retorna valor fallback si el dato es nulo */

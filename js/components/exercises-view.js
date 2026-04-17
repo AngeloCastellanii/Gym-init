@@ -23,15 +23,20 @@ class ExercisesView extends HTMLElement {
         </button>
       </div>
       <div class="view-content">
+        <!-- Barra de busqueda -->
         <div class="search-bar">
           <i class="ph ph-magnifying-glass" style="padding-left:16px; color:var(--text-muted); font-size:18px;"></i>
           <input type="text" placeholder="Buscar ejercicio..." id="exercise-search">
-          <div class="divider"></div>
-          <select id="exercise-filter">
-            <option value="">Todos los musculos</option>
-            ${MUSCLE_GROUPS.map(m => `<option value="${m}">${m}</option>`).join('')}
-          </select>
         </div>
+
+        <!-- Filtros por categoria corporal -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="filter-btn active" data-category="">Todos</button>
+          ${Object.keys(MUSCLE_CATEGORIES).map(cat => `
+            <button class="filter-btn" data-category="${cat}">${cat}</button>
+          `).join('')}
+        </div>
+
         <div class="card-grid" id="exercise-grid">
           <loading-state></loading-state>
         </div>
@@ -40,7 +45,15 @@ class ExercisesView extends HTMLElement {
 
     this.querySelector('#btn-add-exercise').addEventListener('click', () => this._openModal(null));
     this.querySelector('#exercise-search').addEventListener('input', () => this._filterAndRender());
-    this.querySelector('#exercise-filter').addEventListener('change', () => this._filterAndRender());
+
+    // Filtros de categoria (delegacion de eventos)
+    this.querySelector('.view-content').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-category]');
+      if (!btn) return;
+      this.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      this._filterAndRender();
+    });
 
     this.querySelector('#exercise-grid').addEventListener('click', (e) => {
       const editBtn   = e.target.closest('[data-edit]');
@@ -80,16 +93,29 @@ class ExercisesView extends HTMLElement {
   }
 
   _filterAndRender() {
-    const searchTerm   = this.querySelector('#exercise-search').value.toLowerCase().trim();
-    const muscleFilter = this.querySelector('#exercise-filter').value;
+    const searchTerm = this.querySelector('#exercise-search').value.toLowerCase().trim();
+    const activeBtn  = this.querySelector('[data-category].active');
+    const category   = activeBtn ? activeBtn.dataset.category : '';
+
+    // Si hay categoria activa, obtener los musculos que pertenecen a ella
+    const allowedMuscles = category ? (MUSCLE_CATEGORIES[category] || []) : null;
 
     let filtered = this._exercises;
-    if (muscleFilter) filtered = filtered.filter(ex => ex.muscleGroup === muscleFilter);
-    if (searchTerm)   filtered = filtered.filter(ex =>
-      ex.name.toLowerCase().includes(searchTerm) ||
-      ex.muscleGroup.toLowerCase().includes(searchTerm) ||
-      (ex.description || '').toLowerCase().includes(searchTerm)
-    );
+
+    // Filtrar por categoria (puede ser varios musculos)
+    if (allowedMuscles) {
+      filtered = filtered.filter(ex => allowedMuscles.includes(ex.muscleGroup));
+    }
+
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(ex =>
+        ex.name.toLowerCase().includes(searchTerm) ||
+        ex.muscleGroup.toLowerCase().includes(searchTerm) ||
+        (ex.description || '').toLowerCase().includes(searchTerm)
+      );
+    }
+
     this._renderCards(filtered);
   }
 
