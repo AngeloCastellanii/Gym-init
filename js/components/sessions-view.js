@@ -9,8 +9,7 @@ class SessionsView extends HTMLElement {
     super();
     this._initialized = false;
     this._sessions = [];
-    this._routines = [];
-    this._exercises = [];
+    this._activeFilter = 'all';
   }
 
   connectedCallback() {
@@ -19,82 +18,150 @@ class SessionsView extends HTMLElement {
 
     this.innerHTML = `
       <div class="page-header">
-        <h1 class="page-title">Historial de Sesiones</h1>
+        <div>
+          <h1 class="page-title">Historial</h1>
+          <p class="page-subtitle" id="session-subtitle">Cargando...</p>
+        </div>
+        <button class="btn btn-primary" onclick="window.location.hash='#session/new'">
+          <i class="ph-bold ph-play"></i> Nueva Sesion
+        </button>
       </div>
+
+      <!-- Filtros + Lista dentro de view-content para centrado correcto -->
       <div class="view-content">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px;">
+          ${['all','today','week','month','year'].map(f => `
+            <button class="filter-btn ${f === 'all' ? 'active' : ''}" data-filter="${f}">
+              ${{ all:'Todo', today:'Hoy', week:'Esta Semana', month:'Este Mes', year:'Este Año' }[f]}
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Lista de sesiones -->
         <div id="sessions-list">
           <loading-state></loading-state>
         </div>
       </div>
     `;
+
+    this.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this._activeFilter = btn.dataset.filter;
+        this.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._renderList();
+      });
+    });
   }
 
   async loadData() {
     try {
-      const db = await GymDB.init();
       this._sessions = await GymDB.sessions.getAll();
-      this._routines = await GymDB.routines.getAll();
-      this._exercises = await GymDB.exercises.getAll();
-      this._renderSessions();
+      this._renderList();
     } catch (err) {
-      console.error('Error al cargar sesiones:', err);
-      const list = this.querySelector('#sessions-list');
-      if (list) list.innerHTML = `<error-state></error-state>`;
+      console.error('Error loadData Sessions:', err);
+      this.querySelector('#sessions-list').innerHTML = '<error-state></error-state>';
     }
   }
 
-  _renderSessions() {
-    const container = this.querySelector('#sessions-list');
-    if (!container) return;
+  _filterSessions() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return this._sessions.filter(s => {
+      const d = new Date(s.date);
+      switch (this._activeFilter) {
+        case 'today': return d >= today;
+        case 'week': {
+          const ws = new Date(today);
+          ws.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+          return d >= ws;
+        }
+        case 'month': return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        case 'year':  return d.getFullYear() === now.getFullYear();
+        default: return true;
+      }
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
 
-    if (this._sessions.length === 0) {
+  _renderList() {
+    const container = this.querySelector('#sessions-list');
+    const filtered = this._filterSessions();
+    const subtitle = this.querySelector('#session-subtitle');
+    const label = { all:'todas las sesiones', today:'hoy', week:'esta semana', month:'este mes', year:'este año' }[this._activeFilter];
+    const totalVol = filtered.filter(s => s.type !== 'free').reduce((a, s) => a + calcTotalVolume(s.logs), 0);
+
+    if (subtitle) {
+      subtitle.textContent = `${filtered.length} sesion${filtered.length !== 1 ? 'es' : ''} — ${label}${totalVol > 0 ? ' • Vol: ' + displayWeight(totalVol) + ' ' + unitLabel() : ''}`;
+    }
+
+    if (filtered.length === 0) {
       container.innerHTML = `
-        <div class="glass-card" style="padding:24px;">
-          <div class="empty-state">
-            <i class="ph-bold ph-calendar-check icon"></i>
-            <p>Aun no tienes sesiones registradas</p>
-            <button class="btn btn-primary" style="margin-top:10px;" onclick="window.location.hash='#session/new'">
-              <i class="ph-bold ph-play"></i> Iniciar Entrenamiento
-            </button>
-          </div>
+        <div class="empty-state">
+          <i class="ph-bold ph-calendar-x icon"></i>
+          <p>No hay sesiones en este periodo.</p>
+          <button class="btn btn-primary" onclick="window.location.hash='#session/new'">
+            <i class="ph-bold ph-play"></i> Empezar a entrenar
+          </button>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = this._sessions.map(session => {
-      const routine = this._routines.find(r => r.id === session.routineId);
-      const routineName = routine ? routine.name : 'Rutina personalizada';
-      
-      const date = typeof formatDate === 'function' ? formatDate(session.date) : session.date;
-      const duration = typeof formatDuration === 'function' ? formatDuration(session.duration) : '00:00';
-      
-      const totalSets = (session.logs || []).reduce((acc, log) => acc + (log.sets ? log.sets.length : 0), 0);
-      const totalVolume = typeof calcTotalVolume === 'function' ? calcTotalVolume(session.logs) : 0;
+    container.innerHTML = filtered.map(s => {
+      const isFree  = s.type === 'free';
+      const title   = isFree ? (s.name || 'Sesion Libre') : 'Entrenamiento Finalizado';
+      const icon    = isFree ? 'ph-timer' : 'ph-check-circle';
+      const iconClr = isFree ? 'var(--success-light)' : 'var(--accent-light)';
+      const vol     = !isFree ? `${displayWeight(calcTotalVolume(s.logs))} ${unitLabel()}` : null;
 
       return `
-        <div class="glass-card hover-lift" style="padding:20px; margin-bottom:12px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-            <div>
-              <h3 style="font-size:17px; font-weight:700; color:#FFFFFF;">${routineName}</h3>
-              <p style="font-size:12px; color:var(--text-secondary);">${date}</p>
-            </div>
-            <div class="chrono-display" style="font-size:14px; color:var(--accent-light);">${duration}</div>
+        <div class="glass-card hover-lift session-row">
+          <!-- Icono -->
+          <div class="session-row-icon" style="color:${iconClr};">
+            <i class="ph-fill ${icon}" style="font-size:24px;"></i>
           </div>
-          
-          <div style="display:flex; gap:20px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <i class="ph-bold ph-list-numbers" style="color:var(--accent-light);"></i>
-              <span style="font-size:13px; font-weight:600;">${totalSets} series</span>
+
+          <!-- Info -->
+          <div class="session-row-info" onclick="window.location.hash='#session/${s.id}'">
+            <p class="session-row-date">${formatDate(s.date)}</p>
+            <h3 class="session-row-title">${title}</h3>
+            <div class="session-row-meta">
+              ${vol ? `<span><i class="ph ph-barbell"></i> ${vol}</span>` : ''}
+              <span><i class="ph ph-clock"></i> ${formatDuration(s.duration)}</span>
+              ${!isFree ? `<span><i class="ph ph-list-checks"></i> ${(s.logs||[]).length} ejercicios</span>` : ''}
+              ${isFree ? `<span class="badge badge-success" style="font-size:9px; padding:3px 8px;">LIBRE</span>` : ''}
             </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <i class="ph-bold ph-barbell" style="color:var(--success-light);"></i>
-              <span style="font-size:13px; font-weight:600;">${displayWeight(totalVolume)} ${unitLabel()}</span>
-            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="session-row-actions">
+            <button class="btn btn-ghost" style="height:34px; padding:0 12px; font-size:12px; white-space:nowrap;" onclick="window.location.hash='#session/${s.id}'">
+              <i class="ph-bold ph-arrow-right"></i><span class="btn-label"> Ver</span>
+            </button>
+            <button class="btn btn-icon btn-danger" style="width:34px; height:34px; border-radius:8px; flex-shrink:0;" onclick="this.closest('sessions-view')._deleteSession('${s.id}')">
+              <i class="ph-bold ph-trash-simple"></i>
+            </button>
           </div>
         </div>
       `;
     }).join('');
+  }
+
+  async _deleteSession(id) {
+    const dialog = document.createElement('confirm-dialog');
+    const confirmed = await dialog.show({
+      title: 'Eliminar Sesion',
+      message: 'Esta accion eliminara permanentemente este registro de entrenamiento.',
+      confirmText: 'Si, eliminar'
+    });
+    if (!confirmed) return;
+    try {
+      await GymDB.sessions.delete(id);
+      this._sessions = this._sessions.filter(s => String(s.id) !== String(id));
+      this._renderList();
+    } catch (err) {
+      console.error('Error al eliminar sesion:', err);
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    GYM INIT â€” Global Styles
    Design Tokens, Reset, Glassmorphism, Navigation,
    Components, Animations, and Utilities
@@ -188,20 +188,18 @@ app-nav {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 22px;
   color: #fff;
-  box-shadow: 0 4px 20px var(--accent-glow);
   flex-shrink: 0;
-  transition: transform var(--transition), box-shadow var(--transition);
+  transition: transform var(--transition);
 }
 
 .sidebar-logo:hover .sidebar-logo-icon {
   transform: scale(1.06);
-  box-shadow: 0 6px 28px var(--accent-glow);
 }
 
 .sidebar-logo-text {
@@ -408,10 +406,7 @@ app-nav {
 }
 
 .page-title--gradient {
-  background: linear-gradient(135deg, var(--accent-light), var(--success-light));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-light);
 }
 
 .page-subtitle {
@@ -466,23 +461,21 @@ app-nav {
 
 /* Primary Blue */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 4px 20px var(--accent-glow);
 }
 .btn-primary:hover {
-  box-shadow: 0 6px 28px var(--accent-glow);
+  background: #1d4ed8;
   transform: translateY(-1px);
 }
 
 /* Success / Emerald */
 .btn-success {
-  background: linear-gradient(135deg, var(--success), var(--success-light));
+  background: var(--success);
   color: #fff;
-  box-shadow: 0 4px 20px var(--success-glow);
 }
 .btn-success:hover {
-  box-shadow: 0 6px 28px var(--success-glow);
+  background: #047857;
   transform: translateY(-1px);
 }
 
@@ -566,7 +559,6 @@ app-nav {
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .form-input::placeholder {
@@ -845,7 +837,6 @@ app-nav {
   font-weight: 700;
   color: var(--success-light);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 10px var(--success-glow), 0 0 20px var(--success-glow);
   letter-spacing: 2px;
 }
 
@@ -915,7 +906,6 @@ app-nav {
   background: var(--success);
   border-color: var(--success);
   color: #fff;
-  box-shadow: 0 0 12px var(--success-glow);
 }
 
 
@@ -978,8 +968,8 @@ app-nav {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px var(--success-glow); }
-  50%       { box-shadow: 0 0 20px var(--success-glow), 0 0 40px var(--success-glow); }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
 }
 
 @keyframes spin {
@@ -990,3 +980,137 @@ app-nav {
 .view-enter {
   animation: viewFadeIn 0.3s ease forwards;
 }
+
+/* ============================================================
+   Session Filter Buttons
+   ============================================================ */
+.filter-btn {
+  padding: 8px 16px;
+  border-radius: 50px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.filter-btn.active {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.2);
+  color: var(--accent-light);
+}
+
+/* Badge success */
+.badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success-light);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   Session History Row — Responsive
+   ============================================================ */
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  margin-bottom: 10px;
+  border-color: rgba(255,255,255,0.05);
+}
+
+.session-row-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.session-row-info {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.session-row-date {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.session-row-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-row-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.session-row-meta span {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.session-row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Mobile: ajustes responsive */
+@media (max-width: 600px) {
+  .session-row {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .session-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .btn-label { display: none; }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .page-header .btn { align-self: stretch; justify-content: center; }
+}
+

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================
  *  <exercise-modal> â€” Modal para Crear / Editar Ejercicios
  *
@@ -48,7 +48,12 @@ class ExerciseModal extends HTMLElement {
             <!-- Grupo muscular + Tipo (lado a lado) -->
             <div style="display:flex; gap:12px;">
               <div class="form-group" style="flex:1;">
-                <label class="form-label" for="ex-muscle">Grupo Muscular</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <label class="form-label" style="margin-bottom:0;" for="ex-muscle">Grupo Muscular</label>
+                  <button type="button" id="btn-add-muscle" style="font-size:11px; font-weight:700; color:var(--accent-light); background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; gap:4px;">
+                    <i class="ph-bold ph-plus-circle"></i> Agregar
+                  </button>
+                </div>
                 <select class="form-select" id="ex-muscle">
                   ${MUSCLE_GROUPS.map(m => `<option value="${m}">${m}</option>`).join('')}
                 </select>
@@ -126,6 +131,20 @@ class ExerciseModal extends HTMLElement {
 
     // Guardar
     this.querySelector('#ex-save').addEventListener('click', () => this._save());
+
+    // Agregar grupo muscular personalizado
+    this.querySelector('#btn-add-muscle').addEventListener('click', () => {
+      const name = prompt('Nombre del nuevo grupo muscular o actividad:');
+      if (name && name.trim()) {
+        addCustomMuscle(name.trim());
+        const select = this.querySelector('#ex-muscle');
+        const opt = document.createElement('option');
+        opt.value = name.trim();
+        opt.textContent = name.trim();
+        opt.selected = true;
+        select.appendChild(opt);
+      }
+    });
 
     // Aplica la configuracion pendiente si open() se llamo antes de montar
     if (this._pendingOpen) {

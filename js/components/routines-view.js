@@ -1,12 +1,6 @@
-﻿/**
+/**
  * ============================================================
- *  <routines-view> â€” Vista de Gestion de Rutinas (#routines)
- *
- *  Muestra todas las rutinas como glass cards con una decoracion
- *  de cuarto de circulo. Cada tarjeta muestra el conteo de ejercicios,
- *  sus nombres, y tiene acciones de Iniciar, Editar y Eliminar.
- *
- *  DOM construido en connectedCallback, datos cargados via loadData().
+ *  <routines-view> — Mis Rutinas
  * ============================================================
  */
 
@@ -14,10 +8,7 @@ class RoutinesView extends HTMLElement {
   constructor() {
     super();
     this._initialized = false;
-
-    /** @type {Array} Todas las rutinas */
     this._routines = [];
-    /** @type {Array} Todos los ejercicios (para busqueda de nombres) */
     this._exercises = [];
   }
 
@@ -25,139 +16,152 @@ class RoutinesView extends HTMLElement {
     if (this._initialized) return;
     this._initialized = true;
 
-    // Construye el shell estatico
     this.innerHTML = `
       <div class="page-header">
-        <h1 class="page-title">Mis Rutinas</h1>
+        <div>
+          <h1 class="page-title">Mis Rutinas</h1>
+          <p class="page-subtitle" id="routines-subtitle">Cargando...</p>
+        </div>
         <button class="btn btn-primary" id="btn-add-routine">
-          <i class="ph-bold ph-plus"></i>
-          Nueva Rutina
+          <i class="ph-bold ph-plus"></i> Nueva Rutina
         </button>
       </div>
       <div class="view-content">
-        <div class="card-grid" id="routine-grid">
+        <div class="card-grid" id="routines-grid">
           <loading-state></loading-state>
         </div>
       </div>
     `;
 
-    // Boton para agregar rutina
-    this.querySelector('#btn-add-routine').addEventListener('click', () => {
-      this._openModal(null);
-    });
+    this.querySelector('#btn-add-routine').addEventListener('click', () => this._openModal(null));
 
-    // Delegacion de eventos en tarjetas
-    this.querySelector('#routine-grid').addEventListener('click', (e) => {
+    this.querySelector('#routines-grid').addEventListener('click', (e) => {
+      const editBtn   = e.target.closest('[data-edit]');
+      const deleteBtn = e.target.closest('[data-delete]');
       const startBtn  = e.target.closest('[data-start]');
-      const editBtn   = e.target.closest('[data-edit-rt]');
-      const deleteBtn = e.target.closest('[data-delete-rt]');
 
+      if (editBtn)   this._openModal(this._routines.find(r => r.id === editBtn.dataset.edit));
+      if (deleteBtn) this._deleteRoutine(deleteBtn.dataset.delete);
       if (startBtn) {
-        // Navega a sesion activa con la rutina preseleccionada
-        window.location.hash = '#session/new?routine=' + startBtn.dataset.start;
-      }
-      if (editBtn) {
-        const rt = this._routines.find(r => r.id === editBtn.dataset.editRt);
-        if (rt) this._openModal(rt);
-      }
-      if (deleteBtn) {
-        this._deleteRoutine(deleteBtn.dataset.deleteRt);
+        localStorage.setItem('pending-routine', startBtn.dataset.start);
+        window.location.hash = '#session/new';
       }
     });
   }
-
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  CARGA DE DATOS
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async loadData() {
     try {
-      this._routines  = await GymDB.routines.getAll();
-      this._exercises = await GymDB.exercises.getAll();
-      this._renderCards();
+      [this._routines, this._exercises] = await Promise.all([
+        GymDB.routines.getAll(),
+        GymDB.exercises.getAll()
+      ]);
+      this._render();
     } catch (err) {
-      console.error('Error al cargar rutinas:', err);
-      this.querySelector('#routine-grid').innerHTML = `
-        <div style="grid-column:1/-1;"><error-state></error-state></div>
-      `;
+      console.error('Error loadData Routines:', err);
     }
   }
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  RENDERIZADO
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  _render() {
+    const subtitle = this.querySelector('#routines-subtitle');
+    if (subtitle) subtitle.textContent = `${this._routines.length} rutina${this._routines.length !== 1 ? 's' : ''} configuradas`;
 
-  _renderCards() {
-    const grid = this.querySelector('#routine-grid');
-
-    if (this._routines.length === 0) {
+    const grid = this.querySelector('#routines-grid');
+    if (!this._routines.length) {
       grid.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1;">
           <i class="ph-bold ph-clipboard-text icon"></i>
-          <p>Aun no tienes rutinas creadas</p>
+          <p>Aun no tienes rutinas creadas.</p>
           <button class="btn btn-primary" onclick="this.closest('routines-view').querySelector('#btn-add-routine').click()">
-            <i class="ph-bold ph-plus"></i> Crear tu primera rutina
+            <i class="ph-bold ph-plus"></i> Crear primera rutina
           </button>
         </div>
       `;
       return;
     }
-
-    grid.innerHTML = this._routines.map(rt => this._cardHTML(rt)).join('');
+    grid.innerHTML = this._routines.map(r => this._cardHTML(r)).join('');
   }
 
-  /**
-   * Genera el HTML para una tarjeta de rutina.
-   * @param {Object} rt â€” Objeto rutina
-   * @returns {string}
-   */
-  _cardHTML(rt) {
-    const exerciseCount = (rt.exercises || []).length;
+  _cardHTML(routine) {
+    const exList = routine.exercises || [];
 
-    // Obtiene los nombres de ejercicios para mostrar
-    const exerciseNames = (rt.exercises || []).map(entry => {
-      const ex = this._exercises.find(e => e.id === entry.exerciseId);
-      return ex ? ex.name : 'Desconocido';
-    });
-    const namesPreview = exerciseNames.slice(0, 3).join(', ')
-      + (exerciseNames.length > 3 ? ` +${exerciseNames.length - 3} mas` : '');
+    // Obtener info real de ejercicios
+    const resolvedEx = exList.map(e => {
+      const found = this._exercises.find(x => x.id === e.exerciseId);
+      return found ? { ...found, sets: e.sets, reps: e.reps } : null;
+    }).filter(Boolean);
 
-    const desc = fallback(rt.description, 'Sin descripcion');
+    // Grupos musculares únicos para el badge de cabecera
+    const muscles = [...new Set(resolvedEx.map(e => e.muscleGroup))].slice(0, 2);
+    const primaryMuscle = muscles[0] || 'General';
+    const primaryColor  = getMuscleColor(primaryMuscle);
+
+    // Tags de los primeros 3 ejercicios
+    const maxShow = 3;
+    const shownEx = resolvedEx.slice(0, maxShow);
+    const extra   = resolvedEx.length - maxShow;
+
+    const exTags = shownEx.map(e => {
+      const c = getMuscleColor(e.muscleGroup);
+      return `<span class="badge" style="font-size:10px; padding:3px 8px; color:${c}; border-color:${c}33; background:${c}1a;">${e.name}</span>`;
+    }).join('');
+
+    const extraTag = extra > 0
+      ? `<span class="badge badge-slate" style="font-size:10px; padding:3px 8px;">+${extra} mas</span>`
+      : '';
+
+    // Icono de fondo representativo
+    const iconColor = primaryColor;
 
     return `
-      <div class="glass-card routine-card hover-lift">
-        <!-- Decoracion de cuarto de circulo -->
-        <div class="routine-card-decoration"></div>
+      <div class="glass-card hover-lift" style="display:flex; flex-direction:column; overflow:hidden; padding:0;">
 
-        <div class="routine-card-content">
-          <h3 class="routine-card-title">${rt.name}</h3>
-          <p class="routine-card-desc">${desc}</p>
-          <div class="routine-card-exercises">
-            <i class="ph-bold ph-list-checks" style="color:var(--accent-light); flex-shrink:0;"></i>
-            <span>${exerciseCount} ejercicio${exerciseCount !== 1 ? 's' : ''}: ${namesPreview}</span>
+        <!-- Area superior (imagen/icono) -->
+        <div style="height:140px; overflow:hidden; position:relative; background:rgba(0,0,0,0.25); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+          <i class="ph-fill ph-clipboard-text" style="font-size:64px; color:${iconColor}; opacity:0.15;"></i>
+          <!-- Badge grupo muscular -->
+          <div style="position:absolute; top:10px; right:10px;">
+            <span class="badge" style="color:${primaryColor}; border-color:${primaryColor}33; background:${primaryColor}1a; font-size:10px; font-weight:800; text-transform:uppercase;">
+              ${primaryMuscle}
+            </span>
+          </div>
+          <!-- Numero de ejercicios -->
+          <div style="position:absolute; bottom:10px; left:12px;">
+            <span style="font-size:12px; color:rgba(255,255,255,0.5); font-weight:700; display:flex; align-items:center; gap:5px;">
+              <i class="ph ph-list-checks"></i> ${exList.length} ejercicio${exList.length !== 1 ? 's' : ''}
+            </span>
           </div>
         </div>
 
-        <div class="routine-card-divider"></div>
+        <!-- Contenido -->
+        <div style="padding:16px; flex:1; display:flex; flex-direction:column; gap:10px;">
+          <h3 style="font-size:16px; font-weight:800; color:#FFFFFF; line-height:1.3;">${routine.name}</h3>
+          ${routine.description
+            ? `<p style="font-size:12px; color:var(--text-secondary); line-height:1.5;">${routine.description.slice(0, 72)}${routine.description.length > 72 ? '...' : ''}</p>`
+            : '<p style="font-size:12px; color:var(--text-muted);">Sin descripcion</p>'
+          }
+          <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px;">
+            ${exTags}${extraTag}
+          </div>
+        </div>
 
-        <div class="routine-card-actions">
-          <button class="btn btn-success routine-card-start" data-start="${rt.id}">
+        <!-- Divisor -->
+        <div style="height:1px; background:rgba(255,255,255,0.04); margin:0 16px;"></div>
+
+        <!-- Acciones -->
+        <div style="padding:12px 16px; display:flex; gap:8px;">
+          <button class="btn btn-success" data-start="${routine.id}" style="flex:1; justify-content:center; height:38px; font-size:13px; font-weight:700;">
             <i class="ph-bold ph-play"></i> Iniciar
           </button>
-          <button class="btn btn-ghost btn-icon" data-edit-rt="${rt.id}" title="Editar">
+          <button class="btn btn-ghost" data-edit="${routine.id}" style="width:38px; height:38px; padding:0; justify-content:center;" title="Editar">
             <i class="ph-bold ph-pencil-simple"></i>
           </button>
-          <button class="btn btn-danger btn-icon" data-delete-rt="${rt.id}" title="Eliminar">
+          <button class="btn btn-icon btn-danger" data-delete="${routine.id}" style="width:38px; height:38px; border-radius:8px;" title="Eliminar">
             <i class="ph-bold ph-trash"></i>
           </button>
         </div>
       </div>
     `;
   }
-
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  ACCIONES
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   _openModal(routine) {
     const modal = document.createElement('routine-modal');
@@ -167,24 +171,17 @@ class RoutinesView extends HTMLElement {
   async _deleteRoutine(id) {
     const routine = this._routines.find(r => r.id === id);
     if (!routine) return;
-
     const dialog = document.createElement('confirm-dialog');
     const confirmed = await dialog.show({
       title: `Eliminar "${routine.name}"?`,
-      message: 'Se eliminara la rutina. Las sesiones historicas asociadas se conservaran.',
+      message: 'Se eliminara permanentemente. Tus sesiones anteriores no se veran afectadas.',
       confirmText: 'Si, eliminar'
     });
-
     if (confirmed) {
-      try {
-        await GymDB.routines.delete(id);
-        await this.loadData();
-      } catch (err) {
-        console.error('Error al eliminar rutina:', err);
-      }
+      await GymDB.routines.delete(id);
+      await this.loadData();
     }
   }
 }
 
-// Registro del Custom Element
 customElements.define('routines-view', RoutinesView);

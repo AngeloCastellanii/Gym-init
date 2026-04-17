@@ -1,41 +1,24 @@
 /**
  * ============================================================
- *  App.js — Punto de entrada de Gym-Init
- *
- *  Maneja la inicialización de la base de datos y la 
- *  configuración del Router. Todas las vistas están en 
- *  js/components/ para mantener el código limpio.
+ *  Gym-Init — Punto de Entrada Principal
  * ============================================================
  */
 
-(async function initApp() {
-  // 1. Inicializa IndexedDB
+document.addEventListener('DOMContentLoaded', async () => {
   try {
     await GymDB.init();
-    console.log('%c📦 Base de Datos (Gym-Init) Lista', 'color: #2563EB; font-weight: bold;');
+    console.log('Base de Datos (Gym-Init) Lista');
+    appRouter.init();
   } catch (err) {
-    console.error('Error al inicializar la base de datos:', err);
+    console.error('Error durante el arranque:', err);
+    const outlet = document.getElementById('app-outlet');
+    if (outlet) {
+      outlet.innerHTML = `
+        <div style="padding:100px 20px; text-align:center;">
+          <h2 style="color:var(--danger);">Error al iniciar la aplicación</h2>
+          <p style="color:var(--text-muted); margin-top:10px;">${err.message}</p>
+        </div>
+      `;
+    }
   }
-
-  // 2. Configura el Router SPA
-  const router = new Router('#app-outlet');
-
-  // Registro de rutas -> Componentes (Custom Elements)
-  router.on('#dashboard',    'dashboard-view');
-  router.on('#exercises',    'exercises-view');
-  router.on('#routines',     'routines-view');
-  router.on('#sessions',     'sessions-view');
-  router.on('#session/new',  'active-session-view');
-
-  // Expone el router globalmente por si se necesita navegar por código
-  window.gymRouter = router;
-
-  // 3. Arranca la Navegación
-  router.start();
-
-  console.log(
-    '%c🏋️ Gym Init v1.0 %c— Ready',
-    'color: #2563EB; font-weight: bold; font-size: 14px;',
-    'color: #9CA3AF; font-size: 12px;'
-  );
-})();
+});

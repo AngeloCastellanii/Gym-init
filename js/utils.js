@@ -1,11 +1,37 @@
 /**
  * ============================================================
- *  Funciones Globales de Ayuda (Utils) — Versión Completa
+ *  Funciones Globales de Ayuda (Utils) — Version Completa
  * ============================================================
  */
 
-// --- Constantes Globales ---
-const MUSCLE_GROUPS = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Biceps', 'Triceps', 'Core', 'Cardio'];
+// --- Grupos Musculares (Dinamicos + Personalizados) ---
+const DEFAULT_MUSCLES = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Biceps', 'Triceps', 'Core', 'Cardio'];
+
+function getCustomMuscles() {
+  try { return JSON.parse(localStorage.getItem('gym-custom-muscles') || '[]'); } 
+  catch { return []; }
+}
+
+function addCustomMuscle(name) {
+  if (!name || !name.trim()) return;
+  const custom = getCustomMuscles();
+  const clean = name.trim();
+  if (!custom.includes(clean) && !DEFAULT_MUSCLES.includes(clean)) {
+    custom.push(clean);
+    localStorage.setItem('gym-custom-muscles', JSON.stringify(custom));
+  }
+}
+
+function removeCustomMuscle(name) {
+  const custom = getCustomMuscles().filter(m => m !== name);
+  localStorage.setItem('gym-custom-muscles', JSON.stringify(custom));
+}
+
+// Lista completa (defaults + personalizados)
+Object.defineProperty(window, 'MUSCLE_GROUPS', {
+  get: () => [...DEFAULT_MUSCLES, ...getCustomMuscles()],
+  configurable: true
+});
 
 // --- Herramientas de Interfaz (UI Helpers) ---
 /** Retorna valor fallback si el dato es nulo */

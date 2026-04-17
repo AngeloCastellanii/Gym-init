@@ -1,12 +1,6 @@
-﻿/**
+/**
  * ============================================================
- *  <exercises-view> â€” Vista del Catalogo de Ejercicios (#exercises)
- *
- *  Muestra todos los ejercicios como glass cards con busqueda y filtro.
- *  Soporta operaciones CRUD via modales y dialogos de confirmacion.
- *  Cada tarjeta permite subir una imagen inline.
- *
- *  DOM construido en connectedCallback, datos cargados via loadData().
+ *  <exercises-view> — Catalogo de Ejercicios
  * ============================================================
  */
 
@@ -14,8 +8,6 @@ class ExercisesView extends HTMLElement {
   constructor() {
     super();
     this._initialized = false;
-
-    /** @type {Array} Lista completa de ejercicios desde IndexedDB */
     this._exercises = [];
   }
 
@@ -23,17 +15,14 @@ class ExercisesView extends HTMLElement {
     if (this._initialized) return;
     this._initialized = true;
 
-    // Construye el shell estatico
     this.innerHTML = `
       <div class="page-header">
         <h1 class="page-title">Catalogo de Ejercicios</h1>
         <button class="btn btn-primary" id="btn-add-exercise">
-          <i class="ph-bold ph-plus"></i>
-          Anadir Ejercicio
+          <i class="ph-bold ph-plus"></i> Anadir Ejercicio
         </button>
       </div>
       <div class="view-content">
-        <!-- Barra de busqueda y filtro -->
         <div class="search-bar">
           <i class="ph ph-magnifying-glass" style="padding-left:16px; color:var(--text-muted); font-size:18px;"></i>
           <input type="text" placeholder="Buscar ejercicio..." id="exercise-search">
@@ -43,30 +32,16 @@ class ExercisesView extends HTMLElement {
             ${MUSCLE_GROUPS.map(m => `<option value="${m}">${m}</option>`).join('')}
           </select>
         </div>
-
-        <!-- Cuadricula de tarjetas de ejercicios -->
         <div class="card-grid" id="exercise-grid">
           <loading-state></loading-state>
         </div>
       </div>
     `;
 
-    // Boton para agregar ejercicio
-    this.querySelector('#btn-add-exercise').addEventListener('click', () => {
-      this._openModal(null);
-    });
+    this.querySelector('#btn-add-exercise').addEventListener('click', () => this._openModal(null));
+    this.querySelector('#exercise-search').addEventListener('input', () => this._filterAndRender());
+    this.querySelector('#exercise-filter').addEventListener('change', () => this._filterAndRender());
 
-    // Input de busqueda (filtrado en vivo)
-    this.querySelector('#exercise-search').addEventListener('input', () => {
-      this._filterAndRender();
-    });
-
-    // Dropdown de filtro por grupo muscular
-    this.querySelector('#exercise-filter').addEventListener('change', () => {
-      this._filterAndRender();
-    });
-
-    // Delegacion de eventos para acciones en tarjetas (editar, eliminar, subir imagen)
     this.querySelector('#exercise-grid').addEventListener('click', (e) => {
       const editBtn   = e.target.closest('[data-edit]');
       const deleteBtn = e.target.closest('[data-delete]');
@@ -76,35 +51,22 @@ class ExercisesView extends HTMLElement {
         const ex = this._exercises.find(x => x.id === editBtn.dataset.edit);
         if (ex) this._openModal(ex);
       }
-      if (deleteBtn) {
-        this._deleteExercise(deleteBtn.dataset.delete);
-      }
+      if (deleteBtn) this._deleteExercise(deleteBtn.dataset.delete);
       if (cameraBtn) {
-        // Dispara el input de archivo oculto de esta tarjeta
         const fileInput = this.querySelector(`#img-input-${cameraBtn.dataset.camera}`);
         if (fileInput) fileInput.click();
       }
     });
 
-    // Manejador de cambio en input de imagen (delegacion)
     this.querySelector('#exercise-grid').addEventListener('change', async (e) => {
       if (e.target.matches('.card-image-input')) {
         const file = e.target.files[0];
         const exerciseId = e.target.dataset.exerciseId;
-        if (file && exerciseId) {
-          await this._updateImage(exerciseId, file);
-        }
+        if (file && exerciseId) await this._updateImage(exerciseId, file);
       }
     });
   }
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  CARGA DE DATOS (llamado por el Router tras montar)
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-  /**
-   * Carga los ejercicios desde IndexedDB y renderiza las tarjetas.
-   */
   async loadData() {
     try {
       this._exercises = await GymDB.exercises.getAll();
@@ -112,116 +74,85 @@ class ExercisesView extends HTMLElement {
     } catch (err) {
       console.error('Error al cargar ejercicios:', err);
       this.querySelector('#exercise-grid').innerHTML = `
-        <div style="grid-column:1/-1;">
-          <error-state></error-state>
-        </div>
+        <div style="grid-column:1/-1;"><error-state></error-state></div>
       `;
     }
   }
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  RENDERIZADO
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-  /**
-   * Filtra los ejercicios segun busqueda/filtro actuales y renderiza.
-   */
   _filterAndRender() {
     const searchTerm   = this.querySelector('#exercise-search').value.toLowerCase().trim();
     const muscleFilter = this.querySelector('#exercise-filter').value;
 
     let filtered = this._exercises;
-
-    // Filtra por grupo muscular
-    if (muscleFilter) {
-      filtered = filtered.filter(ex => ex.muscleGroup === muscleFilter);
-    }
-
-    // Filtra por termino de busqueda (nombre, musculo o descripcion)
-    if (searchTerm) {
-      filtered = filtered.filter(ex =>
-        ex.name.toLowerCase().includes(searchTerm) ||
-        ex.muscleGroup.toLowerCase().includes(searchTerm) ||
-        (ex.description || '').toLowerCase().includes(searchTerm)
-      );
-    }
-
+    if (muscleFilter) filtered = filtered.filter(ex => ex.muscleGroup === muscleFilter);
+    if (searchTerm)   filtered = filtered.filter(ex =>
+      ex.name.toLowerCase().includes(searchTerm) ||
+      ex.muscleGroup.toLowerCase().includes(searchTerm) ||
+      (ex.description || '').toLowerCase().includes(searchTerm)
+    );
     this._renderCards(filtered);
   }
 
-  /**
-   * Renderiza las tarjetas de ejercicio en la cuadricula.
-   * @param {Array} exercises
-   */
   _renderCards(exercises) {
     const grid = this.querySelector('#exercise-grid');
-
     if (exercises.length === 0) {
       grid.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1;">
           <i class="ph-bold ph-barbell icon"></i>
           <p>No se encontraron ejercicios</p>
           <button class="btn btn-primary" onclick="this.closest('exercises-view').querySelector('#btn-add-exercise').click()">
-            <i class="ph-bold ph-plus"></i> Anadir tu primer ejercicio
+            <i class="ph-bold ph-plus"></i> Anadir primer ejercicio
           </button>
         </div>
       `;
       return;
     }
-
     grid.innerHTML = exercises.map(ex => this._cardHTML(ex)).join('');
   }
 
-  /**
-   * Genera el HTML para una sola tarjeta de ejercicio.
-   * @param {Object} ex â€” Objeto ejercicio
-   * @returns {string} Cadena HTML
-   */
   _cardHTML(ex) {
     const color = getMuscleColor(ex.muscleGroup);
-    const desc = fallback(ex.description, 'Sin descripcion');
-    // Trunca la descripcion a ~100 caracteres
-    const shortDesc = desc.length > 100 ? desc.slice(0, 100) + 'â€¦' : desc;
+    // Descripcion limpia sin simbolos corruptos
+    const rawDesc = (ex.description || 'Sin descripcion').replace(/[^\x00-\x7F\u00C0-\u024F\u00A0-\u00FF]/g, '');
+    const shortDesc = rawDesc.length > 110 ? rawDesc.slice(0, 110) + '...' : rawDesc;
 
     const imageArea = ex.image
-      ? `<img src="${ex.image}" alt="${ex.name}" class="exercise-card-img">`
-      : `<div class="exercise-card-img-placeholder">
-           <i class="ph-bold ph-barbell" style="font-size:32px; color:${color}; opacity:0.4;"></i>
+      ? `<img src="${ex.image}" alt="${ex.name}" style="width:100%; height:100%; object-fit:cover; display:block;">`
+      : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+           <i class="ph-bold ph-barbell" style="font-size:36px; color:${color}; opacity:0.35;"></i>
          </div>`;
 
     return `
-      <div class="glass-card exercise-card hover-lift">
-        <!-- Area de imagen con boton de camara -->
-        <div class="exercise-card-image-wrap">
+      <div class="glass-card exercise-card hover-lift" style="display:flex; flex-direction:column; overflow:hidden;">
+        <!-- Imagen con altura fija y contenedor de control -->
+        <div style="height:140px; overflow:hidden; position:relative; background:rgba(0,0,0,0.2); flex-shrink:0;">
           ${imageArea}
-          <button class="exercise-card-camera" data-camera="${ex.id}" title="Cambiar imagen">
-            <i class="ph-bold ph-camera"></i>
+          <button data-camera="${ex.id}" title="Cambiar imagen"
+            style="position:absolute; bottom:8px; right:8px; width:32px; height:32px; border-radius:8px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.15); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
+            <i class="ph-bold ph-camera" style="font-size:14px;"></i>
           </button>
           <input type="file" accept="image/*" class="card-image-input"
                  id="img-input-${ex.id}" data-exercise-id="${ex.id}" style="display:none;">
         </div>
 
         <!-- Contenido -->
-        <div class="exercise-card-content">
-          <div class="exercise-card-header">
-            <h3 class="exercise-card-title">${ex.name}</h3>
+        <div style="padding:16px; flex:1; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+            <h3 style="font-size:16px; font-weight:700; color:#FFFFFF; line-height:1.3;">${ex.name}</h3>
             ${muscleBadge(ex.muscleGroup)}
           </div>
-          <div class="exercise-card-meta">
-            <span class="badge badge-slate">
-              <i class="ph ph-tag" style="font-size:12px;"></i> ${ex.type}
-            </span>
-          </div>
-          <p class="exercise-card-desc">${shortDesc}</p>
+          <span class="badge badge-slate" style="align-self:flex-start;">
+            <i class="ph ph-tag" style="font-size:11px;"></i> ${ex.type || 'Peso Libre'}
+          </span>
+          <p style="font-size:13px; color:var(--text-secondary); line-height:1.6; flex:1;">${shortDesc}</p>
         </div>
 
         <!-- Acciones -->
-        <div class="exercise-card-divider"></div>
-        <div class="exercise-card-actions">
-          <button class="btn btn-ghost exercise-card-edit" data-edit="${ex.id}">
+        <div style="padding:12px 16px; border-top:1px solid rgba(255,255,255,0.04); display:flex; gap:8px;">
+          <button class="btn btn-ghost" data-edit="${ex.id}" style="flex:1; justify-content:center; height:36px; font-size:13px;">
             <i class="ph-bold ph-pencil-simple"></i> Editar
           </button>
-          <button class="btn btn-danger btn-icon" data-delete="${ex.id}" title="Eliminar">
+          <button class="btn btn-icon btn-danger" data-delete="${ex.id}" style="width:36px; height:36px; border-radius:8px;" title="Eliminar">
             <i class="ph-bold ph-trash"></i>
           </button>
         </div>
@@ -229,79 +160,52 @@ class ExercisesView extends HTMLElement {
     `;
   }
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  //  ACCIONES
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-  /**
-   * Abre el modal de ejercicio para crear o editar.
-   * @param {Object|null} exercise
-   */
   _openModal(exercise) {
     const modal = document.createElement('exercise-modal');
     modal.open(exercise, () => this.loadData());
   }
 
-  /**
-   * Elimina un ejercicio con confirmacion.
-   * Verifica si el ejercicio esta en alguna rutina y advierte.
-   * @param {string} id
-   */
   async _deleteExercise(id) {
     const exercise = this._exercises.find(ex => ex.id === id);
     if (!exercise) return;
 
-    // Verifica si el ejercicio esta en alguna rutina
     const routinesUsing = await GymDB.exercises.findInRoutines(id);
     let impact = '';
     if (routinesUsing.length > 0) {
-      const names = routinesUsing.map(r => r.name).join(', ');
-      impact = `Este ejercicio se usa en ${routinesUsing.length} rutina(s): ${names}. Se eliminara de todas ellas.`;
+      impact = `Usado en ${routinesUsing.length} rutina(s): ${routinesUsing.map(r => r.name).join(', ')}.`;
     }
 
     const dialog = document.createElement('confirm-dialog');
     const confirmed = await dialog.show({
       title: `Eliminar "${exercise.name}"?`,
-      message: 'Esta accion eliminara permanentemente el ejercicio.',
+      message: 'Esta accion es permanente.',
       impact: impact || undefined,
       confirmText: 'Si, eliminar'
     });
 
     if (confirmed) {
-      try {
-        await GymDB.exercises.delete(id);
-
-        // Tambien lo elimina de cualquier rutina que lo referencie
-        if (routinesUsing.length > 0) {
-          for (const routine of routinesUsing) {
-            routine.exercises = routine.exercises.filter(e => e.exerciseId !== id);
-            await GymDB.routines.update(routine);
-          }
+      await GymDB.exercises.delete(id);
+      if (routinesUsing.length > 0) {
+        for (const routine of routinesUsing) {
+          routine.exercises = routine.exercises.filter(e => e.exerciseId !== id);
+          await GymDB.routines.update(routine);
         }
-
-        // Refresca la lista
-        await this.loadData();
-      } catch (err) {
-        console.error('Error al eliminar ejercicio:', err);
       }
+      await this.loadData();
     }
   }
 
-  /**
-   * Actualiza la imagen de un ejercicio desde el boton de camara de la tarjeta.
-   * @param {string} exerciseId
-   * @param {File} file
-   */
   async _updateImage(exerciseId, file) {
     try {
       const base64 = await fileToBase64(file);
-      await GymDB.exercises.update({ id: exerciseId, image: base64 });
-      await this.loadData();
-    } catch (err) {
-      console.error('Error al actualizar imagen:', err);
-    }
+      const ex = this._exercises.find(e => e.id === exerciseId);
+      if (ex) {
+        ex.image = base64;
+        await GymDB.exercises.update(ex);
+        await this.loadData();
+      }
+    } catch (err) { console.error('Error al actualizar imagen:', err); }
   }
 }
 
-// Registro del Custom Element
 customElements.define('exercises-view', ExercisesView);
