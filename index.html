@@ -20,6 +20,12 @@
   <!-- Hoja de estilos principal -->
   <link rel="stylesheet" href="css/styles.css">
 
+  <!-- Manifest PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0B0E14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <!-- Iconos Phosphor via CDN -->
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 
@@ -69,6 +75,17 @@
   <!-- Core: Router y arranque de la App -->
   <script src="js/router.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- Registro de PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW registrado correctamente'))
+          .catch(err => console.error('Error al registrar SW', err));
+      });
+    }
+  </script>
 
 </body>
 
