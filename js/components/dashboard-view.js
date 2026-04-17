@@ -2,6 +2,7 @@
  * ============================================================
  *  <dashboard-view> — Panel de Control Principal
  *  Con filtros de periodo: Hoy / Semana / Mes / Global
+ *  Incluye: objetivo visible, resumen de peso corporal
  * ============================================================
  */
 
@@ -13,23 +14,56 @@ class DashboardView extends HTMLElement {
     this._exercises = [];
     this._exMap     = {};
     this._period    = 'week'; // 'today' | 'week' | 'month' | 'global'
+    this._bwRecords = [];
   }
 
   connectedCallback() {
     if (this._initialized) return;
     this._initialized = true;
 
+    const profile = this._getProfile();
+    const goalText = profile.goal || null;
+    const name     = profile.name || '';
+
+    const goalIcons = {
+      'Ganar musculo':       { icon: 'ph-trend-up',         color: '#f97316' },
+      'Perder grasa':        { icon: 'ph-trend-down',        color: '#10b981' },
+      'Mejorar resistencia': { icon: 'ph-heartbeat',         color: '#3b82f6' },
+      'Mantener forma':      { icon: 'ph-equals',            color: '#a78bfa' },
+      'Aumentar fuerza':     { icon: 'ph-barbell',           color: '#fbbf24' }
+    };
+    const goalStyle = goalIcons[goalText] || { icon: 'ph-target', color: 'var(--accent-light)' };
+
     this.innerHTML = `
       <div class="page-header">
         <div>
-          <h1 class="page-title">Panel de Control</h1>
+          <h1 class="page-title">${name ? `Hola, ${name} 👋` : 'Panel de Control'}</h1>
           <p class="page-subtitle" id="dash-subtitle">Resumen de tu progreso</p>
         </div>
         <button class="btn btn-ghost" id="unit-toggle">
           <i class="ph-bold ph-scales"></i>
-          Unidad: <span id="unit-label">${unitLabel()}</span>
+          <span id="unit-label">${unitLabel()}</span>
         </button>
       </div>
+
+      <!-- Banner de Objetivo -->
+      ${goalText ? `
+        <div style="margin: 0 32px 0; padding:14px 20px; background:${goalStyle.color}18; border:1px solid ${goalStyle.color}44; border-radius:14px; display:flex; align-items:center; gap:12px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:${goalStyle.color}22; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="ph-bold ${goalStyle.icon}" style="font-size:18px; color:${goalStyle.color};"></i>
+          </div>
+          <div>
+            <p style="font-size:10px; font-weight:800; color:${goalStyle.color}; text-transform:uppercase; letter-spacing:0.06em;">Tu Objetivo</p>
+            <p style="font-size:14px; font-weight:700; color:#FFF; margin-top:1px;">${goalText}</p>
+          </div>
+          <a href="#profile" style="margin-left:auto; font-size:11px; color:var(--text-muted); text-decoration:none; white-space:nowrap;">Editar →</a>
+        </div>
+      ` : `
+        <div style="margin: 0 32px 0; padding:12px 20px; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.08); border-radius:14px; display:flex; align-items:center; justify-content:space-between;">
+          <p style="font-size:13px; color:var(--text-muted);">Aún no has definido tu objetivo</p>
+          <a href="#profile" style="font-size:12px; font-weight:700; color:var(--accent-light); text-decoration:none;">Configurar →</a>
+        </div>
+      `}
 
       <!-- Filtros de periodo -->
       <div style="padding:16px 32px 0; display:flex; gap:8px; flex-wrap:wrap;">
@@ -50,6 +84,20 @@ class DashboardView extends HTMLElement {
           ${this._kpiCard('Racha Actual','—','ph-fire','var(--success-light)')}
           ${this._kpiCard('Vol. Total','—','ph-barbell','#f97316')}
           ${this._kpiCard('Ejercicios','—','ph-list-checks','#a78bfa')}
+        </div>
+
+        <!-- Panel de Peso Corporal -->
+        <div class="glass-card" style="padding:24px;" id="bw-dashboard-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i class="ph-bold ph-scales" style="color:#10b981; font-size:16px;"></i>
+              <span style="font-weight:700; font-size:15px; color:#FFFFFF;">Evolución de Peso Corporal</span>
+            </div>
+            <a href="#profile" style="font-size:11px; color:var(--text-muted); text-decoration:none;">+ Registrar →</a>
+          </div>
+          <div id="bw-dashboard-content">
+            <p style="font-size:12px; color:var(--text-muted); font-style:italic; text-align:center; padding:16px 0;">Cargando...</p>
+          </div>
         </div>
 
         <!-- Charts -->
@@ -90,17 +138,153 @@ class DashboardView extends HTMLElement {
     });
   }
 
+  _getProfile() {
+    try { return JSON.parse(localStorage.getItem('gym-profile') || '{}'); }
+    catch { return {}; }
+  }
+
   async loadData() {
     try {
-      [this._sessions, this._exercises] = await Promise.all([
+      [this._sessions, this._exercises, this._bwRecords] = await Promise.all([
         GymDB.sessions.getAll(),
-        GymDB.exercises.getAll()
+        GymDB.exercises.getAll(),
+        GymDB.bodyweight.getLastDays(90)
       ]);
       this._exMap = Object.fromEntries(this._exercises.map(e => [e.id, e]));
       this._update();
+      this._renderBwPanel();
     } catch (err) {
       console.error('Error dashboard loadData:', err);
     }
+  }
+
+  // -------------------------------------------------------
+  //  Panel de Peso Corporal
+  // -------------------------------------------------------
+  _renderBwPanel() {
+    const container = this.querySelector('#bw-dashboard-content');
+    if (!container) return;
+
+    const records = this._bwRecords;
+    const unit    = unitLabel();
+
+    if (!records || records.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:24px 0;">
+          <i class="ph-bold ph-scales" style="font-size:36px; color:var(--text-muted); opacity:0.3;"></i>
+          <p style="font-size:13px; color:var(--text-muted); margin-top:12px;">Aún no tienes registros de peso.</p>
+          <a href="#profile" style="font-size:12px; color:var(--accent-light); font-weight:700; text-decoration:none;">Registra tu peso de hoy →</a>
+        </div>
+      `;
+      return;
+    }
+
+    const weights  = records.map(r => r.weight);
+    const latest   = records[records.length - 1];
+    const oldest   = records[0];
+    const change   = parseFloat((latest.weight - oldest.weight).toFixed(1));
+    const absChange = Math.abs(change);
+
+    // Determinar tendencia
+    let trendLabel, trendColor, trendIcon;
+    if (records.length < 2 || change === 0) {
+      trendLabel = 'Estable'; trendColor = '#a78bfa'; trendIcon = 'ph-equals';
+    } else if (change > 0) {
+      trendLabel = `+${absChange} ${unit}`; trendColor = '#f97316'; trendIcon = 'ph-trend-up';
+    } else {
+      trendLabel = `-${absChange} ${unit}`; trendColor = '#10b981'; trendIcon = 'ph-trend-down';
+    }
+
+    // Mini KPIs de peso
+    const minW = Math.min(...weights);
+    const maxW = Math.max(...weights);
+    const avg  = (weights.reduce((a,b) => a+b, 0) / weights.length).toFixed(1);
+
+    const kpis = `
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px;">
+        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+          <p style="font-size:18px; font-weight:800; color:#FFF;">${latest.weight}</p>
+          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Actual</p>
+        </div>
+        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+          <p style="font-size:18px; font-weight:800; color:${trendColor}; display:flex; align-items:center; justify-content:center; gap:4px;">
+            <i class="ph-bold ${trendIcon}" style="font-size:14px;"></i>${trendLabel}
+          </p>
+          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">vs hace ${records.length - 1} días</p>
+        </div>
+        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+          <p style="font-size:18px; font-weight:800; color:#FFF;">${minW}</p>
+          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Mínimo</p>
+        </div>
+        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+          <p style="font-size:18px; font-weight:800; color:#FFF;">${avg}</p>
+          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Promedio</p>
+        </div>
+      </div>
+    `;
+
+    // Gráfica de línea SVG para peso
+    const n    = records.length;
+    const W    = 600, H = 120, padL = 36, padR = 16, padT = 16, padB = 28;
+    const minWp = minW - 1; const maxWp = maxW + 1;
+    const rangeW = maxWp - minWp || 1;
+
+    const xPos = (i) => padL + (i / Math.max(n - 1, 1)) * (W - padL - padR);
+    const yPos = (w) => padT + (1 - (w - minWp) / rangeW) * (H - padT - padB);
+
+    // Línea de tendencia como polyline
+    const points = records.map((r, i) => `${xPos(i).toFixed(1)},${yPos(r.weight).toFixed(1)}`).join(' ');
+
+    // Área bajo la línea
+    const areaPoints = `${xPos(0).toFixed(1)},${(H - padB).toFixed(1)} ${points} ${xPos(n-1).toFixed(1)},${(H - padB).toFixed(1)}`;
+
+    // Etiquetas Y (eje izquierdo)
+    const yTicks = [minW, Math.round((minW + maxW) / 2), maxW];
+    const yLabels = yTicks.map(v => `
+      <text x="${padL - 4}" y="${yPos(v).toFixed(1) + 4}" text-anchor="end"
+        fill="rgba(255,255,255,0.3)" font-size="9" font-family="Inter,sans-serif">${v}</text>
+      <line x1="${padL}" y1="${yPos(v).toFixed(1)}" x2="${W - padR}" y2="${yPos(v).toFixed(1)}"
+        stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    `).join('');
+
+    // Etiquetas X (cada ~7 días o menos)
+    const step = Math.max(1, Math.floor(n / 5));
+    const xLabels = records.map((r, i) => {
+      if (i % step !== 0 && i !== n - 1) return '';
+      const d = new Date(r.date + 'T00:00:00');
+      const label = `${d.getDate()}/${d.getMonth() + 1}`;
+      return `<text x="${xPos(i).toFixed(1)}" y="${H - 6}" text-anchor="middle"
+        fill="rgba(255,255,255,0.3)" font-size="8" font-family="Inter,sans-serif">${label}</text>`;
+    }).join('');
+
+    // Punto del último valor
+    const lastX = xPos(n - 1).toFixed(1);
+    const lastY = yPos(latest.weight).toFixed(1);
+
+    const svgLine = `
+      <div style="background:rgba(0,0,0,0.2); border-radius:12px; padding:12px; border:1px solid var(--border); overflow-x:auto;">
+        <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bwGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${trendColor}" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="${trendColor}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          ${yLabels}
+          <polygon points="${areaPoints}" fill="url(#bwGradient)"/>
+          <polyline points="${points}" fill="none" stroke="${trendColor}" stroke-width="2" stroke-linejoin="round"/>
+          ${records.map((r, i) => `
+            <circle cx="${xPos(i).toFixed(1)}" cy="${yPos(r.weight).toFixed(1)}" r="${i === n-1 ? 5 : 2.5}"
+              fill="${i === n-1 ? trendColor : trendColor + '88'}" />
+          `).join('')}
+          <text x="${lastX}" y="${parseFloat(lastY) - 10}" text-anchor="middle"
+            fill="#fff" font-size="10" font-weight="700" font-family="Inter,sans-serif">${latest.weight} ${unit}</text>
+          ${xLabels}
+        </svg>
+      </div>
+    `;
+
+    container.innerHTML = kpis + svgLine;
   }
 
   // -------------------------------------------------------
@@ -158,7 +342,7 @@ class DashboardView extends HTMLElement {
     const sorted = [...this._sessions]
       .filter(s => s.type !== 'free')
       .map(s => new Date(s.date).toDateString())
-      .filter((v, i, a) => a.indexOf(v) === i) // dias unicos
+      .filter((v, i, a) => a.indexOf(v) === i)
       .sort((a, b) => new Date(b) - new Date(a));
 
     let streak = 0;
@@ -190,7 +374,7 @@ class DashboardView extends HTMLElement {
          tension:0.4, borderWidth:2, pointRadius:3, pointBackgroundColor:'#60A5FA' }]
     );
 
-    // 2. Frecuencia — barras por dia de semana dentro del período
+    // 2. Frecuencia
     const freqData = [0,0,0,0,0,0,0];
     sessions.forEach(s => {
       const idx = new Date(s.date).getDay();
@@ -201,7 +385,7 @@ class DashboardView extends HTMLElement {
       [{ label:'Sesiones', data:freqData, backgroundColor:'#10B981', borderRadius:5 }]
     );
 
-    // 3. Distribución Muscular — lookup real
+    // 3. Distribución Muscular
     const muscleCount = {};
     routineSessions.forEach(s => {
       s.logs.forEach(log => {
@@ -218,7 +402,7 @@ class DashboardView extends HTMLElement {
       [{ data:mVals, backgroundColor:mColors, borderWidth:0 }], true
     );
 
-    // 4. Intensidad Promedio — peso medio por sesion
+    // 4. Intensidad Promedio
     const intSessions = routineSessions.slice(-10);
     const intData = intSessions.map(s => {
       const sets = s.logs.flatMap(l => (l.sets || []));
