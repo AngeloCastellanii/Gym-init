@@ -363,38 +363,50 @@ class ProfileView extends HTMLElement {
         </div>
       `;
 
-      // Grafica SVG de barras
-      const n     = records.length;
-      const W     = 480, H = 100, padL = 8, padR = 8, padT = 8, padB = 24;
-      const bW    = Math.max(4, Math.floor((W - padL - padR) / n) - 2);
-      const gap   = Math.floor((W - padL - padR - bW * n) / Math.max(n - 1, 1));
+      // Gráfica solo si hay suficientes datos para mostrar evolución
+      let chartHTML = '';
+      if (records.length >= 3) {
+        const n     = records.length;
+        const W     = 480, H = 100, padL = 8, padR = 8, padT = 8, padB = 24;
+        const bW    = Math.max(4, Math.floor((W - padL - padR) / n) - 2);
+        const gap   = Math.floor((W - padL - padR - bW * n) / Math.max(n - 1, 1));
 
-      const bars = records.map((r, i) => {
-        const x = padL + i * (bW + gap);
-        const bH = ((r.weight - minW) / range) * (H - padT - padB);
-        const y  = H - padB - bH;
-        const isLast = i === n - 1;
-        return `
-          <rect x="${x}" y="${y.toFixed(1)}" width="${bW}" height="${bH.toFixed(1)}"
-            fill="${isLast ? '#2563EB' : 'rgba(37,99,235,0.35)'}" rx="2"/>
-          ${i % Math.max(1, Math.floor(n / 5)) === 0 || isLast ? `
-            <text x="${x + bW/2}" y="${H - 4}" text-anchor="middle" fill="rgba(255,255,255,0.3)"
-              font-size="8" font-family="Inter,sans-serif">${r.date.slice(5)}</text>
-          ` : ''}
-          ${isLast ? `
-            <text x="${x + bW/2}" y="${y - 4}" text-anchor="middle" fill="#fff"
-              font-size="9" font-weight="700" font-family="Inter,sans-serif">${r.weight}</text>
-          ` : ''}
+        const bars = records.map((r, i) => {
+          const x = padL + i * (bW + gap);
+          const bH = ((r.weight - minW) / range) * (H - padT - padB);
+          const y  = H - padB - bH;
+          const isLast = i === n - 1;
+          return `
+            <rect x="${x}" y="${y.toFixed(1)}" width="${bW}" height="${Math.max(bH, 2).toFixed(1)}"
+              fill="${isLast ? '#2563EB' : '#2563EB55'}" rx="2"/>
+            ${i % Math.max(1, Math.floor(n / 5)) === 0 || isLast ? `
+              <text x="${x + bW/2}" y="${H - 4}" text-anchor="middle" fill="rgba(255,255,255,0.3)"
+                font-size="8" font-family="Inter,sans-serif">${r.date.slice(5)}</text>
+            ` : ''}
+            ${isLast ? `
+              <text x="${x + bW/2}" y="${y - 4}" text-anchor="middle" fill="#fff"
+                font-size="9" font-weight="700" font-family="Inter,sans-serif">${r.weight}</text>
+            ` : ''}
+          `;
+        }).join('');
+
+        chartHTML = `
+          <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px; border:1px solid var(--border); overflow-x:auto; margin-bottom:24px;">
+            <p style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;">Evolución de peso — últimos ${n} registros</p>
+            <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+              ${bars}
+            </svg>
+          </div>
         `;
-      }).join('');
-
-      const svgChart = `
-        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px; border:1px solid var(--border); overflow-x:auto; margin-bottom:24px;">
-          <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            ${bars}
-          </svg>
-        </div>
-      `;
+      } else {
+        const remaining = 3 - records.length;
+        chartHTML = `
+          <div style="background:rgba(0,0,0,0.15); border-radius:10px; padding:16px; border:1px dashed rgba(255,255,255,0.07); margin-bottom:24px; text-align:center;">
+            <i class="ph-bold ph-chart-bar" style="font-size:24px; color:var(--text-muted); opacity:0.4;"></i>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Agrega ${remaining} registro${remaining > 1 ? 's' : ''} más para ver tu gráfica de evolución</p>
+          </div>
+        `;
+      }
 
       // Lista Detallada de Registros
       const recordsListHTML = `
@@ -416,7 +428,8 @@ class ProfileView extends HTMLElement {
         ${records.length > 7 ? `<p style="font-size:11px; color:var(--text-muted); text-align:center; margin-top:12px; font-style:italic;">Mostrando los últimos 7 registros</p>` : ''}
       `;
 
-      wrap.innerHTML = summaryHTML + svgChart + recordsListHTML;
+      wrap.innerHTML = summaryHTML + chartHTML + recordsListHTML;
+
     } catch (err) {
       console.error('Error loading bw history:', err);
       wrap.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">Error al cargar el historial.</p>`;
