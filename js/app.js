@@ -7,6 +7,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await GymDB.init();
+    await seedDatabase();  // Inserta ejercicios/rutinas solo si la DB está vacía
     console.log('Base de Datos (Gym-Init) Lista');
     appRouter.init();
   } catch (err) {
