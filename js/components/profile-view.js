@@ -249,14 +249,17 @@ class ProfileView extends HTMLElement {
           ...allExercises.map(e => GymDB.exercises.delete(e.id))
         ]);
         // Limpiar localStorage (excepto preferencias)
-        const unit = localStorage.getItem('gym-weight-unit');
+        const unit    = localStorage.getItem('gym-weight-unit');
         const profile = localStorage.getItem('gym-profile');
         localStorage.removeItem('gym-custom-muscles');
-        if (unit) localStorage.setItem('gym-weight-unit', unit);
+        if (unit)    localStorage.setItem('gym-weight-unit', unit);
         if (profile) localStorage.setItem('gym-profile', profile);
 
-        alert('Datos eliminados correctamente.');
-        window.location.hash = '#dashboard';
+        // Re-insertar ejercicios y rutinas del seed
+        await seedDatabase();
+
+        alert('Datos eliminados y restaurados correctamente. La app se reiniciara.');
+        location.reload();
       } catch (err) {
         console.error('Error al borrar datos:', err);
         alert('Error al borrar los datos: ' + err.message);
