@@ -389,18 +389,49 @@ class ProfileView extends HTMLElement {
       }).join('');
 
       const svgChart = `
-        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px; border:1px solid var(--border); overflow-x:auto;">
+        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px; border:1px solid var(--border); overflow-x:auto; margin-bottom:24px;">
           <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
             ${bars}
           </svg>
         </div>
-        <p style="font-size:10px; color:var(--text-muted); margin-top:6px; text-align:right;">Últimos ${n} registros — ${unit}</p>
       `;
 
-      wrap.innerHTML = summaryHTML + svgChart;
+      // Lista Detallada de Registros
+      const recordsListHTML = `
+        <p style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px;">Registros Recientes</p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${[...records].reverse().slice(0, 7).map(r => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid var(--border-subtle);">
+              <div>
+                <p style="font-size:13px; font-weight:700; color:#FFF;">${formatDateLong(r.date)}</p>
+                <p style="font-size:11px; color:var(--text-muted);">${r.weight} ${unit}</p>
+              </div>
+              <button class="btn btn-icon btn-ghost" style="color:var(--danger-light); width:32px; height:32px; border:none;" 
+                onclick="this.closest('profile-view')._deleteWeight('${r.id}')" title="Eliminar registro">
+                <i class="ph-bold ph-trash-simple" style="font-size:16px;"></i>
+              </button>
+            </div>
+          `).join('')}
+        </div>
+        ${records.length > 7 ? `<p style="font-size:11px; color:var(--text-muted); text-align:center; margin-top:12px; font-style:italic;">Mostrando los últimos 7 registros</p>` : ''}
+      `;
+
+      wrap.innerHTML = summaryHTML + svgChart + recordsListHTML;
     } catch (err) {
       console.error('Error loading bw history:', err);
       wrap.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">Error al cargar el historial.</p>`;
+    }
+  }
+
+  async _deleteWeight(id) {
+    if (!confirm('¿Eliminar este registro de peso?')) return;
+    try {
+      // Necesitamos acceder al metodo interno de eliminacion de GymDB
+      await GymDB._delete('bodyweight', id);
+      this._loadBwHistory();
+    } catch (err) {
+      console.error('Error al eliminar peso:', err);
+      alert('Error: ' + err.message);
     }
   }
 

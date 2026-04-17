@@ -119,18 +119,26 @@ function formatDate(isoString) {
   });
 }
 
+/** Formatea fecha YYYY-MM-DD a "Viernes, 17 de Abr" o similar */
+function formatDateLong(dateStr) {
+  const date = new Date(dateStr + 'T00:00:00'); // Forzar hora local
+  const options = { weekday: 'long', day: 'numeric', month: 'long' };
+  const formatted = date.toLocaleDateString('es-ES', options);
+  // Capitalizar primera letra
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+/** Formatea duracion en ms a HH:MM:SS o MM:SS */
 function formatDuration(ms) {
-  if (!ms) return '00:00';
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const hh = Math.floor(m / 60);
-  const mm = m % 60;
-  const ss = s % 60;
+  if (!ms || ms < 0) return '00:00';
+  const totalSeconds = Math.floor(ms / 1000);
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
   
-  if (hh > 0) {
-    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
-  }
-  return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  const p = (n) => String(n).padStart(2, '0');
+  if (hrs > 0) return `${p(hrs)}:${p(mins)}:${p(secs)}`;
+  return `${p(mins)}:${p(secs)}`;
 }
 
 // --- Colores por Musculo ---
