@@ -93,7 +93,9 @@ class ExercisesView extends HTMLElement {
   }
 
   _filterAndRender() {
-    const searchTerm = this.querySelector('#exercise-search').value.toLowerCase().trim();
+    const searchInput = this.querySelector('#exercise-search');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    
     const activeBtn  = this.querySelector('[data-category].active');
     const category   = activeBtn ? activeBtn.dataset.category : '';
 
