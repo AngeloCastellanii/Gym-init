@@ -430,8 +430,6 @@ class ActiveSessionView extends HTMLElement {
         </div>
       </div>
     `;
-    </div>
-    `;
   }
 
   _renderSetRow(exIdx, setIdx, s) {

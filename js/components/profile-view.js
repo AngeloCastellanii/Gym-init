@@ -432,36 +432,77 @@ class ProfileView extends HTMLElement {
     const streakContainer = this.querySelector('#streak-stats');
     if (!container) return;
 
-    // Crear mapa de actividad (ultimos 6 meses para movil)
-    const trainedDates = new Set(sessions.map(s => new Date(s.date).toDateString()));
     const today = new Date();
-    const cols  = 24; // semanas
-    const W = 600, H = 100;
-    const boxSize = 12, gap = 4;
+    const currentMonth = today.getMonth();
+    const currentYear  = today.getFullYear();
+    
+    // Obtener primer dia del mes y total de dias
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0=Dom
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Ajustar primer dia (queremos que empiece en Lunes=0)
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
 
-    let svgHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100">`;
-    for (let c = 0; c < cols; c++) {
-      for (let r = 0; r < 7; r++) {
-        const d = new Date();
-        d.setDate(today.getDate() - (cols - c) * 7 + r);
-        const isTrained = trainedDates.has(d.toDateString());
-        const color = isTrained ? 'var(--success)' : 'rgba(255,255,255,0.05)';
-        svgHTML += `<rect x="${c * (boxSize + gap)}" y="${r * (boxSize + gap)}" width="${boxSize}" height="${boxSize}" fill="${color}" rx="2" />`;
-      }
-    }
-    svgHTML += '</svg>';
-    container.innerHTML = svgHTML;
+    const trainedDates = new Set(sessions.map(s => {
+      const d = new Date(s.date);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }));
+
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+    let html = `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:16px; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h4 style="font-size:16px; font-weight:800; color:#FFF;">${monthNames[currentMonth]} ${currentYear}</h4>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="width:10px; height:10px; border-radius:50%; background:var(--success);"></div>
+            <span style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Entrenado</span>
+          </div>
+        </div>
+        
+        <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; text-align:center;">
+          ${['L','M','X','J','V','S','D'].map(day => `<span style="font-size:10px; font-weight:800; color:var(--text-muted); padding-bottom:10px;">${day}</span>`).join('')}
+          
+          ${Array(startOffset).fill(0).map(() => `<div></div>`).join('')}
+          
+          ${Array.from({ length: daysInMonth }, (_, i) => {
+            const dayNum = i + 1;
+            const dateKey = `${currentYear}-${currentMonth}-${dayNum}`;
+            const isTrained = trainedDates.has(dateKey);
+            const isToday = dayNum === today.getDate();
+            
+            return `
+              <div style="aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; position:relative; cursor:default;">
+                <div style="
+                  width:34px; height:34px; border-radius:10px; 
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:13px; font-weight:700;
+                  background: ${isTrained ? 'var(--success)' : isToday ? 'rgba(255,255,255,0.08)' : 'transparent'};
+                  color: ${isTrained ? '#000' : isToday ? 'var(--accent-light)' : '#64748b'};
+                  border: ${isToday && !isTrained ? '1px solid var(--accent-light)' : '1px solid rgba(255,255,255,0.03)'};
+                  transition: all 0.2s;
+                ">
+                  ${dayNum}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    
+    container.innerHTML = html;
 
     // Stats de racha
     const streak = this._calculateStreak(sessions);
     streakContainer.innerHTML = `
-      <div style="padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; text-align:center;">
-        <p style="font-size:24px; font-weight:900; color:var(--success-light);">${streak}</p>
-        <p style="font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-top:2px;">Racha Actual</p>
+      <div style="padding:20px; background:var(--success)10; border:1px solid var(--success)33; border-radius:16px; text-align:center;">
+        <p style="font-size:32px; font-weight:900; color:var(--success); line-height:1;">${streak}</p>
+        <p style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:800; margin-top:6px; letter-spacing:0.05em;">Racha Actual</p>
       </div>
-      <div style="padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; text-align:center;">
-        <p style="font-size:24px; font-weight:900; color:#FFF;">${sessions.length}</p>
-        <p style="font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-top:2px;">Sesiones Totales</p>
+      <div style="padding:20px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:16px; text-align:center;">
+        <p style="font-size:32px; font-weight:900; color:#FFF; line-height:1;">${sessions.length}</p>
+        <p style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:800; margin-top:6px; letter-spacing:0.05em;">Sesiones Totales</p>
       </div>
     `;
   }
