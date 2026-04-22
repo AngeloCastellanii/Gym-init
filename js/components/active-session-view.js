@@ -423,19 +423,27 @@ class ActiveSessionView extends HTMLElement {
   _renderSetRow(exIdx, setIdx, s) {
     return `
       <div class="set-row ${s.done ? 'done' : ''}" style="display:grid; grid-template-columns:35px 1fr 1fr 44px 44px; gap:12px; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.02);">
-        <span style="text-align:center; font-weight:800; color:var(--text-muted); font-size:12px;">${setIdx+1}</span>
+        <span style="text-align:center; font-weight:800; color:var(--text-muted); font-size:12px;">${setIdx + 1}</span>
         <div style="position:relative;">
-          <input type="number" value="${s.weight}" class="form-input" style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" oninput="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)" ${s.done?'disabled':''}>
+          <input type="number" inputmode="decimal" value="${s.weight}" class="form-input input-numeric" 
+            style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" 
+            onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)" 
+            onkeydown="if(event.key === 'Enter') this.blur()"
+            ${s.done ? 'disabled' : ''}>
           <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:9px; font-weight:800; color:var(--text-muted); pointer-events:none;">${unitLabel()}</span>
         </div>
         <div style="position:relative;">
-          <input type="number" value="${s.reps}" class="form-input" style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" oninput="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'reps',this.value)" ${s.done?'disabled':''}>
+          <input type="number" inputmode="decimal" value="${s.reps}" class="form-input input-numeric" 
+            style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" 
+            onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'reps',this.value)" 
+            onkeydown="if(event.key === 'Enter') this.blur()"
+            ${s.done ? 'disabled' : ''}>
           <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:9px; font-weight:800; color:var(--text-muted); pointer-events:none;">REPS</span>
         </div>
         <button class="check-btn" style="width:40px; height:40px; border-radius:10px;" onclick="this.closest('active-session-view')._toggleSet(${exIdx},${setIdx})">
-          <i class="ph-bold ${s.done?'ph-check':'ph-circle'}"></i>
+          <i class="ph-bold ${s.done ? 'ph-check' : 'ph-circle'}"></i>
         </button>
-        <button class="btn btn-icon btn-danger" style="width:40px; height:40px; border-radius:10px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.1); visibility:${s.done?'hidden':'visible'};" onclick="this.closest('active-session-view')._delSet(${exIdx},${setIdx})">
+        <button class="btn btn-icon btn-danger" style="width:40px; height:40px; border-radius:10px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.1); visibility:${s.done ? 'hidden' : 'visible'};" onclick="this.closest('active-session-view')._delSet(${exIdx},${setIdx})">
           <i class="ph-bold ph-trash-simple" style="font-size:15px;"></i>
         </button>
       </div>

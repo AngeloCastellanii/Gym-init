@@ -1,5 +1,5 @@
 ﻿/**
- * ============================================================
+ * 
  *  <error-state> â€” Pantalla de error reutilizable
  *
  *  Muestra un icono de error, mensaje y boton de reintento.
@@ -9,7 +9,7 @@
  *    const err = document.createElement('error-state');
  *    err.setMessage('No se pudieron cargar los datos.');
  *    container.appendChild(err);
- * ============================================================
+ * 
  */
 
 class ErrorState extends HTMLElement {

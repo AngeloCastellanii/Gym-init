@@ -1,7 +1,7 @@
 /**
- * ============================================================
+ * 
  *  <routine-modal> — Modal para Crear / Editar Rutinas
- * ============================================================
+ * 
  */
 
 class RoutineModal extends HTMLElement {

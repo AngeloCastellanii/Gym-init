@@ -79,6 +79,45 @@ class RoutinesView extends HTMLElement {
       return;
     }
     grid.innerHTML = this._routines.map(r => this._cardHTML(r)).join('');
+
+    // Listeners de acciones (Fase 1 Roadmap)
+    grid.querySelectorAll('[data-start]').forEach(btn => {
+      btn.onclick = async (e) => {
+        const rid = e.currentTarget.dataset.start;
+        const routine = this._routines.find(r => r.id === rid);
+        if (!routine) return;
+
+        // Cargar info de ejercicios completa para la sesión
+        const logs = (routine.exercises || []).map(re => {
+          const exInfo = this._exercises.find(x => x.id === re.exerciseId);
+          return {
+            exerciseId: re.exerciseId,
+            exerciseName: exInfo ? exInfo.name : 'Ejercicio',
+            muscleGroup: exInfo ? exInfo.muscleGroup : 'Varios',
+            sets: Array.from({ length: re.sets || 3 }, () => ({ weight: 0, reps: re.reps || 10, done: false }))
+          };
+        });
+
+        const sessionData = {
+          type: 'routine',
+          routineId: rid,
+          name: routine.name,
+          startTime: Date.now(),
+          logs: logs
+        };
+
+        sessionStorage.setItem('gym-active-session', JSON.stringify(sessionData));
+        window.location.hash = '#train/active';
+      };
+    });
+
+    this.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.onclick = (e) => this._openEdit(e.currentTarget.dataset.edit);
+    });
+
+    this.querySelectorAll('[data-delete]').forEach(btn => {
+      btn.onclick = (e) => this._delete(e.currentTarget.dataset.delete);
+    });
   }
 
   _cardHTML(routine) {

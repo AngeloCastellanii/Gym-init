@@ -1,8 +1,8 @@
 /**
- * ============================================================
+ *
  *  seed.js — Datos Iniciales de Ejercicios y Rutinas
  *  Se insertan solo 1 vez (si la DB está vacía).
- * ============================================================
+ * 
  */
 
 const SEED_EXERCISES = [

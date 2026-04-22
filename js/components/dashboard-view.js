@@ -1,9 +1,9 @@
 /**
- * ============================================================
+ * 
  *  <dashboard-view> — Panel de Control Principal
  *  Con filtros de periodo: Hoy / Semana / Mes / Global
  *  Incluye: objetivo visible, resumen de peso corporal
- * ============================================================
+ * 
  */
 
 class DashboardView extends HTMLElement {

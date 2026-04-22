@@ -1,7 +1,7 @@
 /**
- * ============================================================
+ * 
  *  <session-detail-view> — Detalle de una Sesion Pasada
- * ============================================================
+ * 
  */
 
 class SessionDetailView extends HTMLElement {

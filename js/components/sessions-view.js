@@ -1,7 +1,7 @@
 /**
- * ============================================================
+ * 
  *  <sessions-view> — Historial de Sesiones
- * ============================================================
+ * 
  */
 
 class SessionsView extends HTMLElement {

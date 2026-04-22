@@ -1,7 +1,7 @@
 /**
- * ============================================================
+ * 
  *  <profile-view> — Perfil y Configuracion del Usuario
- * ============================================================
+ * 
  */
 
 class ProfileView extends HTMLElement {

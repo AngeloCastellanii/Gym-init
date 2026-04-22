@@ -1,6 +1,6 @@
 ﻿/**
- * ============================================================
- *  <confirm-dialog> â€” Modal de confirmacion reutilizable
+ * 
+ *  <confirm-dialog>” Modal de confirmacion reutilizable
  *
  *  Muestra un modal de advertencia para acciones destructivas (eliminar).
  *  Devuelve una Promise que se resuelve en true (confirmado) o
@@ -14,7 +14,7 @@
  *      impact: 'Este ejercicio se usa en 2 rutinas.',
  *      confirmText: 'Si, eliminar'
  *    });
- * ============================================================
+ * 
  */
 
 class ConfirmDialog extends HTMLElement {

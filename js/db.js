@@ -1,7 +1,7 @@
 /**
- * ============================================================
+ * 
  *  GymDB — Capa de Persistencia (IndexedDB)
- * ============================================================
+ * 
  */
 
 const DB_NAME = 'GymInitDB';
@@ -49,7 +49,7 @@ class GymDatabase {
       const tx = this.db.transaction(storeName, 'readonly');
       const request = tx.objectStore(storeName).getAll();
       request.onsuccess = () => resolve(request.result);
-      request.onerror  = () => reject(request.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -58,7 +58,7 @@ class GymDatabase {
       const tx = this.db.transaction(storeName, 'readonly');
       const request = tx.objectStore(storeName).get(isNaN(id) ? id : Number(id));
       request.onsuccess = () => resolve(request.result);
-      request.onerror  = () => reject(request.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -67,7 +67,7 @@ class GymDatabase {
       const tx = this.db.transaction(storeName, 'readwrite');
       const request = tx.objectStore(storeName).put(data);
       request.onsuccess = () => resolve(request.result);
-      request.onerror  = () => reject(request.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -76,20 +76,20 @@ class GymDatabase {
       const tx = this.db.transaction(storeName, 'readwrite');
       const request = tx.objectStore(storeName).delete(isNaN(id) ? id : Number(id));
       request.onsuccess = () => resolve(request.result);
-      request.onerror  = () => reject(request.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
   // --- API Publica ---
   exercises = {
-    getAll: ()     => this._getAll('exercises'),
-    get:    (id)   => this._get('exercises', id),
+    getAll: () => this._getAll('exercises'),
+    get: (id) => this._get('exercises', id),
     add: (data) => {
       if (!data.id) data.id = 'ex_' + Date.now();
       return this._put('exercises', data);
     },
     update: (data) => this._put('exercises', data),
-    delete: (id)   => this._delete('exercises', id),
+    delete: (id) => this._delete('exercises', id),
     findInRoutines: async (exerciseId) => {
       const routines = await this.routines.getAll();
       return routines.filter(r => r.exercises.some(e => e.exerciseId === exerciseId));
@@ -97,15 +97,15 @@ class GymDatabase {
   };
 
   routines = {
-    getAll: ()     => this._getAll('routines'),
-    get:    (id)   => this._get('routines', id),
+    getAll: () => this._getAll('routines'),
+    get: (id) => this._get('routines', id),
     add: (data) => {
       if (!data.id) data.id = 'rt_' + Date.now();
       data.createdAt = new Date().toISOString();
       return this._put('routines', data);
     },
     update: (data) => this._put('routines', data),
-    delete: (id)   => this._delete('routines', id),
+    delete: (id) => this._delete('routines', id),
     getWithExercises: async (id) => {
       const routine = await this._get('routines', id);
       if (!routine) return null;
@@ -119,8 +119,8 @@ class GymDatabase {
   };
 
   sessions = {
-    getAll: ()     => this._getAll('sessions'),
-    get:    (id)   => this._get('sessions', id),
+    getAll: () => this._getAll('sessions'),
+    get: (id) => this._get('sessions', id),
     add: (data) => {
       if (!data.id) data.id = 'sess_' + Date.now();
       data.date = new Date().toISOString();
@@ -135,14 +135,14 @@ class GymDatabase {
     logToday: (weight) => {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       return this._put('bodyweight', {
-        id:     'bw_' + today,
-        date:   today,
+        id: 'bw_' + today,
+        date: today,
         weight: parseFloat(weight)
       });
     },
     /** Últimos N días ordenados cronológicamente */
     getLastDays: async (days) => {
-      const all    = await this._getAll('bodyweight');
+      const all = await this._getAll('bodyweight');
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
       return all

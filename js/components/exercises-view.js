@@ -145,8 +145,8 @@ class ExercisesView extends HTMLElement {
     const shortDesc = rawDesc.length > 110 ? rawDesc.slice(0, 110) + '...' : rawDesc;
 
     const imageArea = ex.image
-      ? `<img src="${ex.image}" alt="${ex.name}" style="width:100%; height:100%; object-fit:cover; display:block;">`
-      : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+      ? `<div class="exercise-media-container"><img src="${ex.image}" alt="${ex.name}"></div>`
+      : `<div class="exercise-media-container" style="display:flex; align-items:center; justify-content:center;">
            <i class="ph-bold ph-barbell" style="font-size:36px; color:${color}; opacity:0.35;"></i>
          </div>`;
 

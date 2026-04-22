@@ -1,5 +1,5 @@
 /**
- * ============================================================
+ * 
  *  <exercise-modal> â€” Modal para Crear / Editar Ejercicios
  *
  *  Formulario modal para agregar ejercicios nuevos o editar existentes.
@@ -10,7 +10,7 @@
  *    const modal = document.createElement('exercise-modal');
  *    modal.open(null, () => refreshList());       // Crear
  *    modal.open(exercise, () => refreshList());   // Editar
- * ============================================================
+ * 
  */
 
 class ExerciseModal extends HTMLElement {

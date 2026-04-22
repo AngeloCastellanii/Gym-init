@@ -1,7 +1,7 @@
 /**
- * ============================================================
+ * 
  *  Gym-Init — Punto de Entrada Principal
- * ============================================================
+ * 
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
