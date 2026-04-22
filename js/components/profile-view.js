@@ -140,6 +140,28 @@ class ProfileView extends HTMLElement {
           </div>
         </div>
 
+        <!-- ── Temas y Personalización (Fase 2.3) ── -->
+        <div class="glass-card" style="padding:28px;">
+          <h3 style="font-size:15px; font-weight:700; color:var(--text-primary); margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-palette" style="color:var(--accent-light);"></i>
+            Aspecto de la App
+          </h3>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 0;">
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--text-primary);">Tema Visual</p>
+              <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Elige tu ambiente preferido</p>
+            </div>
+            <div style="display:flex; background:var(--bg-base); padding:4px; border-radius:12px; border:1px solid var(--border);">
+              <button class="btn-theme" data-theme="dark" style="padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
+                <i class="ph-bold ph-moon"></i> Oscuro
+              </button>
+              <button class="btn-theme" data-theme="light" style="padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
+                <i class="ph-bold ph-sun"></i> Claro
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- ── Preferencias ── -->
         <div class="glass-card" style="padding:28px;">
           <h3 style="font-size:15px; font-weight:700; color:#FFFFFF; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
@@ -375,6 +397,30 @@ class ProfileView extends HTMLElement {
         this._loadBwHistory();
       });
     }
+
+    /* Temas (Fase 2.3) */
+    const themeBtns = this.querySelectorAll('.btn-theme');
+    const currentTheme = document.documentElement.dataset.theme || 'dark';
+    
+    const updateThemeUI = (theme) => {
+      themeBtns.forEach(btn => {
+        const isActive = btn.dataset.theme === theme;
+        btn.style.background = isActive ? 'var(--accent)' : 'transparent';
+        btn.style.color = isActive ? '#FFF' : 'var(--text-secondary)';
+      });
+    };
+    updateThemeUI(currentTheme);
+
+    themeBtns.forEach(btn => {
+      btn.onclick = () => {
+        const theme = btn.dataset.theme;
+        document.documentElement.dataset.theme = theme;
+        const p = this._getProfile();
+        p.theme = theme;
+        this._saveProfile(p);
+        updateThemeUI(theme);
+      };
+    });
 
     /* Eventos de Metas (Fase 2) */
     const rangeWeight = this.querySelector('#goal-weight-range');
