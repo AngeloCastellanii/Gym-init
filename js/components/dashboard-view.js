@@ -40,10 +40,15 @@ class DashboardView extends HTMLElement {
           <h1 class="page-title">${name ? `Hola, ${name} 👋` : 'Panel de Control'}</h1>
           <p class="page-subtitle" id="dash-subtitle">Resumen de tu progreso</p>
         </div>
-        <button class="btn btn-ghost" id="unit-toggle">
-          <i class="ph-bold ph-scales"></i>
-          <span id="unit-label">${unitLabel()}</span>
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost" id="theme-toggle" style="background:var(--bg-card); border:1px solid var(--border);">
+            <i class="ph-bold ph-sun-dim" id="theme-icon"></i>
+          </button>
+          <button class="btn btn-ghost" id="unit-toggle" style="background:var(--bg-card); border:1px solid var(--border);">
+            <i class="ph-bold ph-scales"></i>
+            <span id="unit-label">${unitLabel()}</span>
+          </button>
+        </div>
       </div>
 
       <!-- Banner de Objetivo -->
@@ -127,14 +132,24 @@ class DashboardView extends HTMLElement {
       location.reload();
     });
 
-    // Eventos filtro
-    this.querySelectorAll('.filter-btn[data-period]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this._period = btn.dataset.period;
-        this.querySelectorAll('.filter-btn[data-period]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this._update();
-      });
+    // Evento Tema (Fase 2.3)
+    const themeBtn = this.querySelector('#theme-toggle');
+    const themeIcon = this.querySelector('#theme-icon');
+    
+    // Aplicar icono inicial
+    const isLight = document.documentElement.dataset.theme === 'light';
+    themeIcon.className = isLight ? 'ph-bold ph-moon' : 'ph-bold ph-sun-dim';
+
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.dataset.theme || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      
+      document.documentElement.dataset.theme = next;
+      themeIcon.className = next === 'light' ? 'ph-bold ph-moon' : 'ph-bold ph-sun-dim';
+      
+      const p = this._getProfile();
+      p.theme = next;
+      localStorage.setItem('gym-profile', JSON.stringify(p));
     });
   }
 

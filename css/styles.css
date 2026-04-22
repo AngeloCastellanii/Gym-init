@@ -1,5 +1,5 @@
 /* ============================================================
-   GYM INIT â€” Global Styles
+   GYM INIT — Global Styles
    Design Tokens, Reset, Glassmorphism, Navigation,
    Components, Animations, and Utilities
    ============================================================ */
@@ -11,40 +11,28 @@
    1. CSS Design Tokens (Custom Properties)
    ============================================================ */
 :root {
-  /* Backgrounds (Kinetic Slate) */
-  --bg-base: #0B0E14;   /* Obsidian â€” deepest background */
-  --bg-panel:  #111827;   /* Slate 900 â€” sidebar */
-  --bg-card:   #161D2C;   /* Darker Navy â€” card fills */
+  /* Dark Theme (Default) */
+  --bg-base:   #0B0E14;
+  --bg-panel:  #111827;
+  --bg-card:   #161D2C;
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --accent: #3B82F6;
+  --success: #10B981;
+  --border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(22, 29, 44, 0.7);
 
-  /* Primary Accent â€” Kinetic Blue */
-  --accent:        #2563EB;   /* Vibrant Blue */
-  --accent-light:  #60A5FA;   /* Sky Blue */
+  /* Shared Properties */
+  --accent-light:  #60A5FA;
   --accent-glow:   rgba(37, 99, 235, 0.25);
-
-  /* Success â€” Kinetic Green */
-  --success:       #059669;
   --success-light: #10B981;
   --success-glow:  rgba(16, 185, 129, 0.25);
-
-  /* Danger â€” Red */
   --danger:        #EF4444;
   --danger-light:  #F87171;
-
-  /* Text */
-  --text-primary:   #FFFFFF;
-  --text-secondary: #9CA3AF;  /* Gray 400 */
-  --text-muted:     #4B5563;  /* Gray 600 */
-
-  /* Borders & Lines */
-  --border:         #1F2937;  /* Gray 800 */
-  --border-subtle:  #111827;  /* Gray 900 */
-
-  /* Glassmorphism Values */
-  --glass-bg:      rgba(22, 29, 44, 0.65);
+  --text-muted:     #4B5563;
+  --border-subtle:  #111827;
   --glass-border:  rgba(255, 255, 255, 0.05);
   --glass-blur:    16px;
-
-  /* Layout Dimensions */
   --sidebar-width: 260px;
   --sidebar-collapsed: 80px;
   --bottom-nav-height: 70px;
