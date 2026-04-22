@@ -47,6 +47,83 @@
   --transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── Tema Claro ──────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-base:        #FFFFFF;
+  --bg-panel:       #F8FAFC;
+  --bg-card:        #F1F5F9;
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #94A3B8;
+  --accent:         #2563EB;
+  --accent-light:   #3B82F6;
+  --accent-glow:    rgba(37, 99, 235, 0.2);
+  --success:        #059669;
+  --success-light:  #10B981;
+  --success-glow:   rgba(5, 150, 105, 0.2);
+  --danger:         #DC2626;
+  --danger-light:   #EF4444;
+  --border:         rgba(0, 0, 0, 0.09);
+  --border-subtle:  rgba(0, 0, 0, 0.05);
+  --glass-bg:       rgba(255, 255, 255, 0.9);
+  --glass-border:   rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] body {
+  background-color: #FFFFFF;
+  color: #0F172A;
+}
+
+[data-theme="light"] .sidebar {
+  background: #F8FAFC;
+  border-right: 1px solid rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 4px 20px -8px rgba(0,0,0,0.12);
+}
+
+[data-theme="light"] .page-title,
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3 {
+  color: #0F172A;
+}
+
+[data-theme="light"] .page-subtitle,
+[data-theme="light"] p {
+  color: #475569;
+}
+
+[data-theme="light"] .nav-link {
+  color: #475569;
+}
+
+[data-theme="light"] .nav-link.active,
+[data-theme="light"] .nav-link:hover {
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-select,
+[data-theme="light"] .form-textarea {
+  background: #F8FAFC;
+  color: #0F172A;
+  border-color: rgba(0,0,0,0.12);
+}
+
+[data-theme="light"] .kpi-grid .glass-card {
+  background: #FFFFFF;
+}
+
+[data-theme="light"] #app-outlet {
+  background: #FFFFFF;
+}
+
+
 /* ============================================================
    Common UI Components & Utilities (Fase 1)
    ============================================================ */

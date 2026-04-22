@@ -151,6 +151,16 @@ class DashboardView extends HTMLElement {
       p.theme = next;
       localStorage.setItem('gym-profile', JSON.stringify(p));
     });
+
+    // Eventos filtro de periodo
+    this.querySelectorAll('.filter-btn[data-period]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this._period = btn.dataset.period;
+        this.querySelectorAll('.filter-btn[data-period]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._update();
+      });
+    });
   }
 
   _getProfile() {
