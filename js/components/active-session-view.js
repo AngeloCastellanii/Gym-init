@@ -384,9 +384,11 @@ class ActiveSessionView extends HTMLElement {
     const lastHint = lastData
       ? `<span style="font-size:11px; color:var(--accent-light); font-weight:600; display:flex; align-items:center; gap:4px; margin-top:2px;">
            <i class="ph-bold ph-clock-counter-clockwise" style="font-size:10px;"></i>
-           Última vez: ${lastData.weight} ${unitLabel()} × ${lastData.reps} reps
+           Ultima vez: ${lastData.weight} ${unitLabel()} x ${lastData.reps} reps
          </span>`
-      : `<span style="font-size:11px; color:var(--text-muted); margin-top:2px;">Sin histori    // Sugerencia de Sobrecarga (Fase 4)
+      : `<span style="font-size:11px; color:var(--text-muted); margin-top:2px;">Sin historial aun</span>`;
+
+    // Sugerencia de Sobrecarga (Fase 4)
     let overloadHint = '';
     if (lastData && lastData.weight > 0) {
       const suggested = Math.ceil(lastData.weight * 1.025 * 2) / 2; // Incrementar 2.5% y redondear a 0.5
