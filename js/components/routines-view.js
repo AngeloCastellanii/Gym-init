@@ -131,6 +131,38 @@ class RoutinesView extends HTMLElement {
     grid.querySelectorAll('[data-delete]').forEach(btn => {
       btn.onclick = (e) => this._delete(e.currentTarget.dataset.delete);
     });
+
+    // Listener para cambiar portada (Fase 1.2)
+    grid.querySelectorAll('[data-cover]').forEach(btn => {
+      btn.onclick = (e) => this._changeCover(e.currentTarget.dataset.cover);
+    });
+  }
+
+  async _changeCover(id) {
+    const input = document.createElement('input');
+    input.type = 'accept';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target.result;
+        try {
+          const routine = this._routines.find(r => r.id === id);
+          if (routine) {
+            routine.image = base64;
+            await GymDB.routines.update(routine);
+            this.loadData(); // Recargar vista
+          }
+        } catch (err) {
+          console.error('Error al guardar portada:', err);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
   }
 
   _cardHTML(routine) {
@@ -161,25 +193,31 @@ class RoutinesView extends HTMLElement {
       ? `<span class="badge badge-slate" style="font-size:10px; padding:3px 8px;">+${extra} mas</span>`
       : '';
 
-    // Icono de fondo representativo
+    // Icono o Imagen de fondo representativo (Fase 1.2 - Covers)
     const iconColor = primaryColor;
+    const coverArea = routine.image 
+      ? `<div class="exercise-media-container"><img src="${routine.image}" alt="${routine.name}" style="object-fit:cover;"></div>`
+      : `<div style="height:140px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.2);">
+           <i class="ph-fill ph-clipboard-text" style="font-size:64px; color:${iconColor}; opacity:0.15;"></i>
+         </div>`;
 
     return `
       <div class="glass-card hover-lift" style="display:flex; flex-direction:column; overflow:hidden; padding:0;">
 
         <!-- Area superior (imagen/icono) -->
-        <div style="height:140px; overflow:hidden; position:relative; background:rgba(0,0,0,0.25); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
-          <i class="ph-fill ph-clipboard-text" style="font-size:64px; color:${iconColor}; opacity:0.15;"></i>
+        <div style="height:140px; overflow:hidden; position:relative; flex-shrink:0;">
+          ${coverArea}
+          
+          <!-- Boton para cambiar portada (Fase 1.2) -->
+          <button data-cover="${routine.id}" title="Cambiar portada"
+            style="position:absolute; bottom:8px; right:8px; width:32px; height:32px; border-radius:8px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.15); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); z-index:10;">
+            <i class="ph-bold ph-camera" style="font-size:14px;"></i>
+          </button>
+
           <!-- Badge grupo muscular -->
-          <div style="position:absolute; top:10px; right:10px;">
+          <div style="position:absolute; top:10px; right:10px; z-index:5;">
             <span class="badge" style="color:${primaryColor}; border-color:${primaryColor}33; background:${primaryColor}1a; font-size:10px; font-weight:800; text-transform:uppercase;">
               ${primaryMuscle}
-            </span>
-          </div>
-          <!-- Numero de ejercicios -->
-          <div style="position:absolute; bottom:10px; left:12px;">
-            <span style="font-size:12px; color:rgba(255,255,255,0.5); font-weight:700; display:flex; align-items:center; gap:5px;">
-              <i class="ph ph-list-checks"></i> ${exList.length} ejercicio${exList.length !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
