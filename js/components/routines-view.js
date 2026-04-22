@@ -83,9 +83,13 @@ class RoutinesView extends HTMLElement {
     // Listeners de acciones (Fase 1 Roadmap)
     grid.querySelectorAll('[data-start]').forEach(btn => {
       btn.onclick = async (e) => {
+        e.preventDefault(); // Evitar comportamientos extraños
         const rid = e.currentTarget.dataset.start;
         const routine = this._routines.find(r => r.id === rid);
         if (!routine) return;
+
+        // Limpiar sesión previa por seguridad
+        sessionStorage.removeItem('gym-active-session');
 
         // Cargar info de ejercicios completa para la sesión
         const logs = (routine.exercises || []).map(re => {
@@ -94,7 +98,6 @@ class RoutinesView extends HTMLElement {
             exerciseId: re.exerciseId,
             exerciseName: exInfo ? exInfo.name : 'Ejercicio',
             muscleGroup: exInfo ? exInfo.muscleGroup : 'Varios',
-            // Si la rutina tiene reps configuradas, usarlas; si no, por defecto 10
             sets: Array.from({ length: re.sets || 3 }, () => ({ 
               weight: 0, 
               reps: re.reps || 10, 
@@ -111,8 +114,13 @@ class RoutinesView extends HTMLElement {
           logs: logs
         };
 
-        sessionStorage.setItem('gym-active-session', JSON.stringify(sessionData));
-        window.location.hash = '#train/active';
+        try {
+          sessionStorage.setItem('gym-active-session', JSON.stringify(sessionData));
+          // Navegación forzada para evitar conflictos con el router
+          window.location.hash = '#train/active';
+        } catch (err) {
+          console.error('Error al iniciar rutina directa:', err);
+        }
       };
     });
 
