@@ -94,7 +94,12 @@ class RoutinesView extends HTMLElement {
             exerciseId: re.exerciseId,
             exerciseName: exInfo ? exInfo.name : 'Ejercicio',
             muscleGroup: exInfo ? exInfo.muscleGroup : 'Varios',
-            sets: Array.from({ length: re.sets || 3 }, () => ({ weight: 0, reps: re.reps || 10, done: false }))
+            // Si la rutina tiene reps configuradas, usarlas; si no, por defecto 10
+            sets: Array.from({ length: re.sets || 3 }, () => ({ 
+              weight: 0, 
+              reps: re.reps || 10, 
+              done: false 
+            }))
           };
         });
 
@@ -111,11 +116,11 @@ class RoutinesView extends HTMLElement {
       };
     });
 
-    this.querySelectorAll('[data-edit]').forEach(btn => {
+    grid.querySelectorAll('[data-edit]').forEach(btn => {
       btn.onclick = (e) => this._openEdit(e.currentTarget.dataset.edit);
     });
 
-    this.querySelectorAll('[data-delete]').forEach(btn => {
+    grid.querySelectorAll('[data-delete]').forEach(btn => {
       btn.onclick = (e) => this._delete(e.currentTarget.dataset.delete);
     });
   }
