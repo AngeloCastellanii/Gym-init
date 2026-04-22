@@ -422,21 +422,48 @@ class DashboardView extends HTMLElement {
     if (!canvas) return;
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
-    new Chart(canvas.getContext('2d'), {
+
+    const ctx = canvas.getContext('2d');
+    
+    // Gradiente para lineas (Fase 4)
+    let gradient = null;
+    if (type === 'line' && datasets[0].borderColor) {
+      gradient = ctx.createLinearGradient(0, 0, 0, 200);
+      gradient.addColorStop(0, datasets[0].borderColor + '44');
+      gradient.addColorStop(1, datasets[0].borderColor + '00');
+      datasets[0].backgroundColor = gradient;
+    }
+
+    new Chart(ctx, {
       type,
       data: { labels, datasets },
       options: isDoughnut ? {
         responsive: true, maintainAspectRatio: false,
-        cutout: '62%',
+        cutout: '75%',
         plugins: {
-          legend: { position: 'right', labels: { color:'#9CA3AF', font:{ size:10 }, boxWidth:10, padding:8 } }
+          legend: { 
+            position: 'right', 
+            labels: { 
+              color:'#9CA3AF', 
+              font:{ size:11, weight:'600' }, 
+              boxWidth:8, 
+              usePointStyle: true,
+              padding:12 
+            } 
+          }
         }
       } : {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#4B5563', font:{ size:10 } }, beginAtZero:true },
-          x: { grid:{ display:false }, ticks:{ color:'#4B5563', font:{ size:10 } } }
+          y: { 
+            grid:{ color:'rgba(255,255,255,0.03)', drawBorder:false }, 
+            ticks:{ color:'#6B7280', font:{ size:10, weight:'600' }, beginAtZero:true, padding:8 } 
+          },
+          x: { 
+            grid:{ display:false }, 
+            ticks:{ color:'#6B7280', font:{ size:10, weight:'600' }, padding:8 } 
+          }
         }
       }
     });

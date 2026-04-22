@@ -83,6 +83,63 @@ class ProfileView extends HTMLElement {
           </div>
         </div>
 
+        <!-- ── Calendario de Consistencia (Fase 2) ── -->
+        <div class="glass-card" style="padding:28px;">
+          <h3 style="font-size:15px; font-weight:700; color:#FFFFFF; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-calendar" style="color:var(--accent-light);"></i>
+            Consistencia y Actividad
+          </h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">Tu historial de actividad de los ultimos meses</p>
+          
+          <div id="activity-heatmap" style="overflow-x:auto; padding-bottom:8px;">
+            <p style="font-size:12px; color:var(--text-muted); font-style:italic;">Calculando actividad...</p>
+          </div>
+
+          <div id="streak-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;">
+            <!-- Streaks se inyectan aqui -->
+          </div>
+        </div>
+
+        <!-- ── Records Personales / Hall of Fame (Fase 2) ── -->
+        <div class="glass-card" style="padding:28px;">
+          <h3 style="font-size:15px; font-weight:700; color:#FFFFFF; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-trophy" style="color:#fbbf24;"></i>
+            Hall of Fame — Records Personales
+          </h3>
+          <div id="personal-records-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px;">
+            <p style="font-size:12px; color:var(--text-muted); font-style:italic;">Analizando historial...</p>
+          </div>
+        </div>
+
+        <!-- ── Sistema de Metas Objetivos (Fase 2) ── -->
+        <div class="glass-card" style="padding:28px;">
+          <h3 style="font-size:15px; font-weight:700; color:#FFFFFF; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-flag-banner" style="color:var(--success-light);"></i>
+            Metas y Objetivos
+          </h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">Lo que estas por lograr</p>
+          
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            <div class="goal-item">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-size:13px; font-weight:700; color:#FFF;">Peso Corporal Objetivo</span>
+                <span id="goal-weight-label" style="font-size:12px; color:var(--accent-light); font-weight:800;">-- ${unit}</span>
+              </div>
+              <input type="range" class="form-range" id="goal-weight-range" min="40" max="150" step="0.5" style="width:100%; accent-color:var(--accent);">
+            </div>
+
+            <div class="goal-item">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-size:13px; font-weight:700; color:#FFF;">Meta de Entrenamiento Semanal</span>
+                <span id="goal-freq-label" style="font-size:12px; color:var(--success-light); font-weight:800;">-- dias</span>
+              </div>
+              <div style="display:flex; gap:6px;">
+                ${[1,2,3,4,5,6,7].map(d => `<button class="btn btn-ghost btn-goal-freq" data-val="${d}" style="flex:1; height:32px; font-size:11px; padding:0;">${d}</button>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ── Preferencias ── -->
         <div class="glass-card" style="padding:28px;">
           <h3 style="font-size:15px; font-weight:700; color:#FFFFFF; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
@@ -319,8 +376,156 @@ class ProfileView extends HTMLElement {
       });
     }
 
+    /* Eventos de Metas (Fase 2) */
+    const rangeWeight = this.querySelector('#goal-weight-range');
+    const labelWeight = this.querySelector('#goal-weight-label');
+    const profile     = this._getProfile();
+    
+    if (rangeWeight) {
+      rangeWeight.value = profile.goalWeight || 75;
+      labelWeight.textContent = `${rangeWeight.value} ${getWeightUnit()}`;
+      rangeWeight.oninput = (e) => {
+        labelWeight.textContent = `${e.target.value} ${getWeightUnit()}`;
+      };
+      rangeWeight.onchange = (e) => {
+        const p = this._getProfile();
+        p.goalWeight = parseFloat(e.target.value);
+        this._saveProfile(p);
+      };
+    }
+
+    const freqBtns = this.querySelectorAll('.btn-goal-freq');
+    const labelFreq = this.querySelector('#goal-freq-label');
+    const currentFreq = profile.weeklyGoal || 4;
+    labelFreq.textContent = `${currentFreq} dias`;
+    
+    freqBtns.forEach(btn => {
+      if (parseInt(btn.dataset.val) === currentFreq) btn.classList.replace('btn-ghost','btn-primary');
+      btn.onclick = () => {
+        const val = parseInt(btn.dataset.val);
+        const p = this._getProfile();
+        p.weeklyGoal = val;
+        this._saveProfile(p);
+        labelFreq.textContent = `${val} dias`;
+        freqBtns.forEach(b => b.classList.replace('btn-primary','btn-ghost'));
+        btn.classList.replace('btn-ghost','btn-primary');
+      };
+    });
+
+    // Cargar datos asíncronos de Fase 2
+    this._loadPhase2Data();
+
     // Cargar historial al montar
     this._loadBwHistory();
+  }
+
+  async _loadPhase2Data() {
+    try {
+      const sessions = await GymDB.sessions.getAll();
+      this._renderHeatmap(sessions);
+      this._renderPRs(sessions);
+    } catch (err) { console.error('Error Phase 2 data:', err); }
+  }
+
+  _renderHeatmap(sessions) {
+    const container = this.querySelector('#activity-heatmap');
+    const streakContainer = this.querySelector('#streak-stats');
+    if (!container) return;
+
+    // Crear mapa de actividad (ultimos 6 meses para movil)
+    const trainedDates = new Set(sessions.map(s => new Date(s.date).toDateString()));
+    const today = new Date();
+    const cols  = 24; // semanas
+    const W = 600, H = 100;
+    const boxSize = 12, gap = 4;
+
+    let svgHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100">`;
+    for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < 7; r++) {
+        const d = new Date();
+        d.setDate(today.getDate() - (cols - c) * 7 + r);
+        const isTrained = trainedDates.has(d.toDateString());
+        const color = isTrained ? 'var(--success)' : 'rgba(255,255,255,0.05)';
+        svgHTML += `<rect x="${c * (boxSize + gap)}" y="${r * (boxSize + gap)}" width="${boxSize}" height="${boxSize}" fill="${color}" rx="2" />`;
+      }
+    }
+    svgHTML += '</svg>';
+    container.innerHTML = svgHTML;
+
+    // Stats de racha
+    const streak = this._calculateStreak(sessions);
+    streakContainer.innerHTML = `
+      <div style="padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; text-align:center;">
+        <p style="font-size:24px; font-weight:900; color:var(--success-light);">${streak}</p>
+        <p style="font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-top:2px;">Racha Actual</p>
+      </div>
+      <div style="padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; text-align:center;">
+        <p style="font-size:24px; font-weight:900; color:#FFF;">${sessions.length}</p>
+        <p style="font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-top:2px;">Sesiones Totales</p>
+      </div>
+    `;
+  }
+
+  _calculateStreak(sessions) {
+    if (!sessions.length) return 0;
+    const dates = [...new Set(sessions.map(s => new Date(s.date).toDateString()))]
+      .sort((a,b) => new Date(b) - new Date(a));
+    
+    let streak = 0;
+    let check = new Date();
+    check.setHours(0,0,0,0);
+
+    for (let d of dates) {
+      const day = new Date(d);
+      const diff = (check - day) / (1000 * 60 * 60 * 24);
+      if (diff <= 1) {
+        streak++;
+        check = day;
+      } else break;
+    }
+    return streak;
+  }
+
+  async _renderPRs(sessions) {
+    const container = this.querySelector('#personal-records-grid');
+    if (!container) return;
+
+    const prs = {
+      weight: 0,
+      vol: 0,
+      oneRM: 0
+    };
+
+    sessions.forEach(s => {
+      if (!s.logs) return;
+      s.logs.forEach(log => {
+        const vol = (log.sets || []).reduce((a, st) => a + (st.weight * st.reps), 0);
+        if (vol > prs.vol) prs.vol = vol;
+        
+        (log.sets || []).forEach(st => {
+          if (st.weight > prs.weight) prs.weight = st.weight;
+          const erm = st.weight * (1 + (st.reps / 30)); // Formula Brzycki
+          if (erm > prs.oneRM) prs.oneRM = Math.round(erm);
+        });
+      });
+    });
+
+    const unit = getWeightUnit();
+    container.innerHTML = `
+      ${this._prCard('Peso Record', `${prs.weight} ${unit}`, 'ph-barbell', '#f97316')}
+      ${this._prCard('Mejor 1RM', `~${prs.oneRM} ${unit}`, 'ph-fire', 'var(--accent-light)')}
+      ${this._prCard('Vol. Sesion', `${prs.vol} ${unit}`, 'ph-chart-line-up', 'var(--success-light)')}
+    `;
+  }
+
+  _prCard(label, val, icon, color) {
+    return `
+      <div style="padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px;">
+        <i class="ph-bold ${icon}" style="color:${color}; font-size:16px; margin-bottom:8px;"></i>
+        <p style="font-size:18px; font-weight:900; color:#FFF;">${val}</p>
+        <p style="font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-top:2px;">${label}</p>
+      </div>
+    `;
   }
 
   async _loadBwHistory() {

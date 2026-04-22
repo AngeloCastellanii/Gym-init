@@ -386,7 +386,16 @@ class ActiveSessionView extends HTMLElement {
            <i class="ph-bold ph-clock-counter-clockwise" style="font-size:10px;"></i>
            Última vez: ${lastData.weight} ${unitLabel()} × ${lastData.reps} reps
          </span>`
-      : `<span style="font-size:11px; color:var(--text-muted); margin-top:2px;">Sin historial aún</span>`;
+      : `<span style="font-size:11px; color:var(--text-muted); margin-top:2px;">Sin histori    // Sugerencia de Sobrecarga (Fase 4)
+    let overloadHint = '';
+    if (lastData && lastData.weight > 0) {
+      const suggested = Math.ceil(lastData.weight * 1.025 * 2) / 2; // Incrementar 2.5% y redondear a 0.5
+      overloadHint = `
+        <div style="margin-top:10px; padding:8px 12px; background:var(--accent-light)15; border:1px dashed var(--accent-light)33; border-radius:8px; display:flex; align-items:center; gap:8px;">
+          <i class="ph-bold ph-lightning" style="color:var(--accent-light); font-size:14px;"></i>
+          <span style="font-size:11px; color:#FFF; font-weight:600;">Sobrecarga sugerida: <b style="color:var(--accent-light);">${suggested} ${unitLabel()}</b> (+2.5%)</span>
+        </div>`;
+    }
 
     return `
       <div class="glass-card view-enter" style="padding:0; overflow:hidden; margin-bottom:20px; border-color:rgba(255,255,255,0.06);">
@@ -396,7 +405,7 @@ class ActiveSessionView extends HTMLElement {
               <button class="order-btn" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0; height:14px;" onclick="this.closest('active-session-view')._moveEx(${i}, -1)">
                 <i class="ph-bold ph-caret-up" style="font-size:12px;"></i>
               </button>
-              <span style="font-weight:900; color:var(--accent-light); font-size:12px; margin:2px 0;">${i+1}</span>
+              <span style="font-weight:900; color:var(--accent-light); font-size:12px; margin:2px 0;">${i + 1}</span>
               <button class="order-btn" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0; height:14px;" onclick="this.closest('active-session-view')._moveEx(${i}, 1)">
                 <i class="ph-bold ph-caret-down" style="font-size:12px;"></i>
               </button>
@@ -409,7 +418,8 @@ class ActiveSessionView extends HTMLElement {
           <span class="badge badge-slate" style="opacity:0.8;">${log.muscleGroup}</span>
         </div>
         <div style="padding:12px 20px;">
-          <div id="ex-${i}-sets">
+          ${overloadHint}
+          <div id="ex-${i}-sets" style="margin-top:10px;">
             ${log.sets.map((s, si) => this._renderSetRow(i, si, s)).join('')}
           </div>
           <button class="btn btn-ghost" style="width:100%; margin-top:12px; height:40px; justify-content:center; border:1px dashed rgba(255,255,255,0.1);" onclick="this.closest('active-session-view')._addSet(${i})">
@@ -418,32 +428,55 @@ class ActiveSessionView extends HTMLElement {
         </div>
       </div>
     `;
+    </div>
+    `;
   }
 
   _renderSetRow(exIdx, setIdx, s) {
+    const isDone = s.done;
     return `
-      <div class="set-row ${s.done ? 'done' : ''}" style="display:grid; grid-template-columns:35px 1fr 1fr 44px 44px; gap:12px; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.02);">
+      <div class="set-row ${isDone ? 'done' : ''}" style="display:grid; grid-template-columns:35px 1fr 1fr 60px 44px 44px; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02);">
         <span style="text-align:center; font-weight:800; color:var(--text-muted); font-size:12px;">${setIdx + 1}</span>
+        
+        <!-- Peso -->
         <div style="position:relative;">
           <input type="number" inputmode="decimal" value="${s.weight}" class="form-input input-numeric" 
             style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" 
             onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)" 
-            onkeydown="if(event.key === 'Enter') this.blur()"
-            ${s.done ? 'disabled' : ''}>
-          <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:9px; font-weight:800; color:var(--text-muted); pointer-events:none;">${unitLabel()}</span>
+            onkeydown="if(event.key==='Enter') this.blur()"
+            ${isDone ? 'disabled' : ''}>
+          <span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:8px; font-weight:800; color:var(--text-muted); pointer-events:none;">${unitLabel()}</span>
         </div>
+
+        <!-- Reps -->
         <div style="position:relative;">
           <input type="number" inputmode="decimal" value="${s.reps}" class="form-input input-numeric" 
             style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" 
             onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'reps',this.value)" 
-            onkeydown="if(event.key === 'Enter') this.blur()"
-            ${s.done ? 'disabled' : ''}>
-          <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:9px; font-weight:800; color:var(--text-muted); pointer-events:none;">REPS</span>
+            onkeydown="if(event.key==='Enter') this.blur()"
+            ${isDone ? 'disabled' : ''}>
+          <span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:8px; font-weight:800; color:var(--text-muted); pointer-events:none;">REPS</span>
         </div>
-        <button class="check-btn" style="width:40px; height:40px; border-radius:10px;" onclick="this.closest('active-session-view')._toggleSet(${exIdx},${setIdx})">
-          <i class="ph-bold ${s.done ? 'ph-check' : 'ph-circle'}"></i>
+
+        <!-- RPE (Fase 4) -->
+        <div style="position:relative;">
+          <select class="form-select" style="height:40px; font-size:11px; padding:0 4px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:var(--accent-light); font-weight:800; border-radius:8px;" 
+            onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'rpe',this.value)"
+            ${isDone ? 'disabled' : ''}>
+            <option value="">RPE</option>
+            ${[10, 9.5, 9, 8.5, 8, 7, 6].map(v => `<option value="${v}" ${s.rpe == v ? 'selected' : ''}>${v}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Check -->
+        <button class="check-btn" style="width:40px; height:40px; border-radius:10px; background:${isDone ? 'var(--success)' : 'rgba(255,255,255,0.05)'}; border:1px solid ${isDone ? 'var(--success)' : 'rgba(255,255,255,0.1)'}; color:${isDone ? '#000' : 'var(--text-muted)'};" 
+          onclick="this.closest('active-session-view')._toggleSet(${exIdx},${setIdx})">
+          <i class="ph-bold ${isDone ? 'ph-check' : 'ph-circle'}"></i>
         </button>
-        <button class="btn btn-icon btn-danger" style="width:40px; height:40px; border-radius:10px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.1); visibility:${s.done ? 'hidden' : 'visible'};" onclick="this.closest('active-session-view')._delSet(${exIdx},${setIdx})">
+
+        <!-- Borrar -->
+        <button class="btn btn-icon btn-danger" style="width:40px; height:40px; border-radius:10px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.1); visibility:${isDone ? 'hidden' : 'visible'};" 
+          onclick="this.closest('active-session-view')._delSet(${exIdx},${setIdx})">
           <i class="ph-bold ph-trash-simple" style="font-size:15px;"></i>
         </button>
       </div>
