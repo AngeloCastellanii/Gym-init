@@ -140,7 +140,7 @@ class RoutinesView extends HTMLElement {
 
   async _changeCover(id) {
     const input = document.createElement('input');
-    input.type = 'accept';
+    input.type = 'file'; // Corregido: antes decía 'accept'
     input.accept = 'image/*';
     input.onchange = async (e) => {
       const file = e.target.files[0];
