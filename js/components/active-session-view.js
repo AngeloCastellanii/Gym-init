@@ -366,8 +366,8 @@ class ActiveSessionView extends HTMLElement {
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div>
-              <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Distancia</label>
-              <input id="free-distance" type="text" class="form-input" placeholder="Ej: 5 km" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);">
+              <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Metrica / Resultado</label>
+              <input id="free-metric" type="text" class="form-input" placeholder="Ej: 5 km, 2 horas, 500 kcal" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);">
             </div>
             <div>
               <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Intensidad</label>
@@ -379,7 +379,7 @@ class ActiveSessionView extends HTMLElement {
           </div>
           <div>
             <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Detalle adicional</label>
-            <input id="free-extra" type="text" class="form-input" placeholder="Ritmo, calorias, nivel completado..." style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);">
+            <input id="free-extra" type="text" class="form-input" placeholder="Ritmo, parciales, nivel completado..." style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);">
           </div>
         </div>
         <div style="display:flex;gap:12px;margin-top:20px;">
@@ -392,17 +392,25 @@ class ActiveSessionView extends HTMLElement {
     overlay.querySelector('#cancel-free-finish').onclick = () => overlay.remove();
     overlay.querySelector('#confirm-free-finish').onclick = () => {
       const journal   = overlay.querySelector('#free-journal').value.trim();
-      const distance  = overlay.querySelector('#free-distance').value.trim();
+      const metric    = overlay.querySelector('#free-metric').value.trim();
       const intensity = overlay.querySelector('#free-intensity').value;
       const extra     = overlay.querySelector('#free-extra').value.trim();
       overlay.remove();
-      this._finishFree(dur, journal, distance, intensity, extra);
+      this._finishFree(dur, journal, metric, intensity, extra);
     };
   }
 
-  async _finishFree(dur, journal = '', distance = '', intensity = '', extra = '') {
-    const parts = [this._freeNotes, distance && `Distancia: ${distance}`, intensity && `Intensidad: ${intensity}`, extra].filter(Boolean);
-    const notes = parts.join(' | ');
+  async _finishFree(dur, journal = '', metric = '', intensity = '', extra = '') {
+    const parts = [
+      this._freeNotes,
+      metric ? `Resultado: ${metric}` : '',
+      intensity ? `Intensidad: ${intensity}` : '',
+      extra ? `Info Extra: ${extra}` : ''
+    ].filter(Boolean);
+    
+    // Guardamos el array como JSON string para mantener la estructura y poder mostrarlo en forma de tags despues.
+    const notes = JSON.stringify(parts);
+    
     try {
       await GymDB.sessions.add({
         type:     'free',

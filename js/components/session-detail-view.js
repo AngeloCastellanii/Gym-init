@@ -72,7 +72,16 @@ class SessionDetailView extends HTMLElement {
 
       <div class="view-content">
         <!-- Resumen de sesion -->
-        ${this._session.type === 'free' ? `
+        ${this._session.type === 'free' ? (() => {
+          let notesList = [];
+          if (this._session.notes) {
+            try {
+              notesList = JSON.parse(this._session.notes);
+            } catch (e) {
+              notesList = this._session.notes.split('|').map(s => s.trim()).filter(Boolean);
+            }
+          }
+          return `
           <div class="kpi-grid" style="margin-bottom:32px;">
             <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
               <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Tiempo Total</span>
@@ -81,13 +90,17 @@ class SessionDetailView extends HTMLElement {
               </div>
             </div>
             <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px; grid-column:1/-1;">
-              <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Detalles y Notas</span>
-              <div style="display:flex; align-items:baseline; gap:8px; margin-top:8px;">
-                 <span style="font-size:15px; font-weight:600; color:var(--text-primary); line-height:1.5;">${this._session.notes || 'Sin detalles extra'}</span>
+              <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Detalles y Métricas</span>
+              <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+                 ${notesList.length > 0 ? notesList.map(note => `
+                   <div style="background:var(--bg-panel); border:1px solid var(--border); padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; color:var(--text-primary);">
+                     ${note}
+                   </div>
+                 `).join('') : '<span style="font-size:14px; color:var(--text-muted);">Sin detalles extra</span>'}
               </div>
             </div>
           </div>
-        ` : `
+        `})() : `
           <div class="kpi-grid" style="margin-bottom:32px;">
             <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
               <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Volumen Levantado</span>
