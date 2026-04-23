@@ -474,10 +474,14 @@ class DashboardView extends HTMLElement {
               boxWidth:10, usePointStyle:true, pointStyle:'circle',
               padding:14,
               generateLabels: (chart) => {
+                const textColor = getComputedStyle(document.documentElement)
+                  .getPropertyValue('--text-primary').trim() || '#fff';
                 return chart.data.labels.map((label, i) => ({
                   text: `${label}  ${mVals[i]} series`,
                   fillStyle: mColors[i],
                   strokeStyle: mColors[i],
+                  fontColor: textColor,
+                  color: textColor,
                   pointStyle: 'circle'
                 }));
               }
