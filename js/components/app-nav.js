@@ -46,6 +46,39 @@ class AppNav extends HTMLElement {
     document.addEventListener('route-changed', (e) => {
       this._highlightActive(e.detail.hash);
     });
+
+    // Logica de Tema Global
+    const themeBtn = this.querySelector('#global-theme-toggle');
+    const themeIcon = this.querySelector('#global-theme-icon');
+    const themeLabel = this.querySelector('#global-theme-label');
+
+    const updateThemeUI = (theme) => {
+      const isLight = theme === 'light';
+      themeIcon.className = isLight ? 'ph-bold ph-moon' : 'ph-bold ph-sun-dim';
+      themeLabel.textContent = isLight ? 'Modo Oscuro' : 'Modo Claro';
+    };
+
+    const currentTheme = document.documentElement.dataset.theme || 'dark';
+    updateThemeUI(currentTheme);
+
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const current = document.documentElement.dataset.theme || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.dataset.theme = next;
+        updateThemeUI(next);
+        
+        // Guardar en perfil
+        try {
+          const p = JSON.parse(localStorage.getItem('gym-profile') || '{}');
+          p.theme = next;
+          localStorage.setItem('gym-profile', JSON.stringify(p));
+          // Emitir evento para que otros componentes se enteren si es necesario
+          window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: next } }));
+        } catch(e) {}
+      });
+    }
   }
 
   _buildHTML() {
@@ -72,6 +105,15 @@ class AppNav extends HTMLElement {
         <div class="sidebar-divider"></div>
         <nav class="sidebar-menu">${navItemsHTML}</nav>
         <div style="flex:1;"></div>
+        
+        <!-- Theme Toggle Global (Fase 2.3) -->
+        <div style="padding:0 12px 12px;">
+          <button id="global-theme-toggle" class="nav-item" style="width:100%; border:1px solid var(--border); background:rgba(255,255,255,0.02); cursor:pointer;">
+            <i id="global-theme-icon" class="ph-bold ph-sun-dim"></i>
+            <span id="global-theme-label" class="nav-label">Modo Claro</span>
+          </button>
+        </div>
+
         <div class="sidebar-divider"></div>
         <!-- Acceso rapido al perfil -->
         <div style="padding:12px;">
@@ -81,7 +123,7 @@ class AppNav extends HTMLElement {
               <i class="ph-fill ph-user"></i>
             </div>
             <div style="min-width:0;">
-              <span id="nav-username" style="font-size:13px; font-weight:700; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">Mi Perfil</span>
+              <span id="nav-username" style="font-size:13px; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">Mi Perfil</span>
               <span style="font-size:10px; color:var(--text-muted);">Configuracion</span>
             </div>
           </a>

@@ -41,9 +41,6 @@ class DashboardView extends HTMLElement {
           <p class="page-subtitle" id="dash-subtitle">Resumen de tu progreso</p>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-ghost" id="theme-toggle" style="background:var(--bg-card); border:1px solid var(--border);">
-            <i class="ph-bold ph-sun-dim" id="theme-icon"></i>
-          </button>
           <button class="btn btn-ghost" id="unit-toggle" style="background:var(--bg-card); border:1px solid var(--border);">
             <i class="ph-bold ph-scales"></i>
             <span id="unit-label">${unitLabel()}</span>
@@ -59,7 +56,7 @@ class DashboardView extends HTMLElement {
           </div>
           <div>
             <p style="font-size:10px; font-weight:800; color:${goalStyle.color}; text-transform:uppercase; letter-spacing:0.06em;">Tu Objetivo</p>
-            <p style="font-size:14px; font-weight:700; color:#FFF; margin-top:1px;">${goalText}</p>
+            <p style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:1px;">${goalText}</p>
           </div>
           <a href="#profile" style="margin-left:auto; font-size:11px; color:var(--text-muted); text-decoration:none; white-space:nowrap;">Editar →</a>
         </div>
@@ -96,7 +93,7 @@ class DashboardView extends HTMLElement {
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <i class="ph-bold ph-scales" style="color:#10b981; font-size:16px;"></i>
-              <span style="font-weight:700; font-size:15px; color:#FFFFFF;">Evolución de Peso Corporal</span>
+              <span style="font-weight:700; font-size:15px; color:var(--text-primary);">Evolución de Peso Corporal</span>
             </div>
             <a href="#profile" style="font-size:11px; color:var(--text-muted); text-decoration:none;">+ Registrar →</a>
           </div>
@@ -132,24 +129,10 @@ class DashboardView extends HTMLElement {
       location.reload();
     });
 
-    // Evento Tema (Fase 2.3)
-    const themeBtn = this.querySelector('#theme-toggle');
-    const themeIcon = this.querySelector('#theme-icon');
-    
-    // Aplicar icono inicial
-    const isLight = document.documentElement.dataset.theme === 'light';
-    themeIcon.className = isLight ? 'ph-bold ph-moon' : 'ph-bold ph-sun-dim';
-
-    themeBtn.addEventListener('click', () => {
-      const current = document.documentElement.dataset.theme || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      
-      document.documentElement.dataset.theme = next;
-      themeIcon.className = next === 'light' ? 'ph-bold ph-moon' : 'ph-bold ph-sun-dim';
-      
-      const p = this._getProfile();
-      p.theme = next;
-      localStorage.setItem('gym-profile', JSON.stringify(p));
+    // Evento unidad
+    this.querySelector('#unit-toggle').addEventListener('click', () => {
+      setWeightUnit(getWeightUnit() === 'kg' ? 'lb' : 'kg');
+      location.reload();
     });
 
     // Eventos filtro de periodo
