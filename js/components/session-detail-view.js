@@ -72,25 +72,42 @@ class SessionDetailView extends HTMLElement {
 
       <div class="view-content">
         <!-- Resumen de sesion -->
-        <div class="kpi-grid" style="margin-bottom:32px;">
-          <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
-            <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Volumen Levantado</span>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-               <span style="font-size:32px; font-weight:900; color:var(--accent-light);">${displayWeight(totalVolume)}</span>
-               <span style="font-size:16px; font-weight:700; color:var(--text-muted);">${unitLabel()}</span>
+        ${this._session.type === 'free' ? `
+          <div class="kpi-grid" style="margin-bottom:32px;">
+            <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
+              <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Tiempo Total</span>
+              <div style="display:flex; align-items:baseline; gap:8px;">
+                 <span style="font-size:32px; font-weight:900; color:var(--text-primary);">${formatDuration(this._session.duration)}</span>
+              </div>
+            </div>
+            <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px; grid-column:1/-1;">
+              <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Detalles y Notas</span>
+              <div style="display:flex; align-items:baseline; gap:8px; margin-top:8px;">
+                 <span style="font-size:15px; font-weight:600; color:var(--text-primary); line-height:1.5;">${this._session.notes || 'Sin detalles extra'}</span>
+              </div>
             </div>
           </div>
-          <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
-            <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Tiempo Total</span>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-               <span style="font-size:32px; font-weight:900; color:#FFFFFF;">${formatDuration(this._session.duration)}</span>
+        ` : `
+          <div class="kpi-grid" style="margin-bottom:32px;">
+            <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
+              <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Volumen Levantado</span>
+              <div style="display:flex; align-items:baseline; gap:8px;">
+                 <span style="font-size:32px; font-weight:900; color:var(--accent-light);">${displayWeight(totalVolume)}</span>
+                 <span style="font-size:16px; font-weight:700; color:var(--text-muted);">${unitLabel()}</span>
+              </div>
+            </div>
+            <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
+              <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Tiempo Total</span>
+              <div style="display:flex; align-items:baseline; gap:8px;">
+                 <span style="font-size:32px; font-weight:900; color:var(--text-primary);">${formatDuration(this._session.duration)}</span>
+              </div>
+            </div>
+            <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
+               <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Ejercicios</span>
+               <span style="font-size:32px; font-weight:900; color:var(--text-primary);">${this._session.logs.length}</span>
             </div>
           </div>
-          <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
-             <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Ejercicios</span>
-             <span style="font-size:32px; font-weight:900; color:#FFFFFF;">${this._session.logs.length}</span>
-          </div>
-        </div>
+        `}
 
         <!-- Diario Post-Sesion -->
         ${this._session.journal ? `
