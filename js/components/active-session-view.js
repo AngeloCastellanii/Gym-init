@@ -38,6 +38,15 @@ class ActiveSessionView extends HTMLElement {
     const saved = this._loadState();
     if (saved && saved.phase && saved.phase !== 'setup') {
       this._restoreFromState(saved);
+      return;
+    }
+
+    // Verificar si viene desde rutinas con una rutina pre-seleccionada
+    const pendingRoutineId = localStorage.getItem('pending-routine');
+    if (pendingRoutineId) {
+      localStorage.removeItem('pending-routine');
+      this._renderSetup();
+      this._autoStartRoutine(pendingRoutineId);
     } else {
       this._renderSetup();
     }
@@ -132,6 +141,47 @@ class ActiveSessionView extends HTMLElement {
       this._routines = await GymDB.routines.getAll();
       this._populateRoutineSelector();
     } catch (err) { console.error('Error loadData:', err); }
+  }
+
+  // Inicia rutina directamente desde routines-view
+  async _autoStartRoutine(routineId) {
+    try {
+      this._routines = await GymDB.routines.getAll();
+      this._populateRoutineSelector();
+      const select = this.querySelector('#session-routine-select');
+      if (select) select.value = routineId;
+      await this._startRoutineById(routineId);
+    } catch (err) {
+      console.error('Error al auto-iniciar rutina:', err);
+    }
+  }
+
+  async _startRoutineById(id) {
+    this._selectedRoutine = await GymDB.routines.getWithExercises(id);
+    if (!this._selectedRoutine) return;
+    await this._buildLastWeightsMap();
+    this._logs = this._selectedRoutine.exercises.map(entry => {
+      const lastData = this._lastWeights[entry.exerciseId];
+      const suggestedWeight = lastData ? lastData.weight : 0;
+      const suggestedReps   = lastData ? lastData.reps   : (entry.reps || 10);
+      return {
+        exerciseId:    entry.exerciseId,
+        exerciseName:  entry.exercise ? entry.exercise.name : 'Ejercicio',
+        muscleGroup:   entry.exercise ? entry.exercise.muscleGroup : '',
+        exerciseImage: entry.exercise ? (entry.exercise.image || '') : '',
+        lastData,
+        sets: Array.from({ length: entry.sets || 3 }, () => ({
+          weight: suggestedWeight,
+          reps:   suggestedReps,
+          done:   false
+        }))
+      };
+    });
+    this._startTime = Date.now();
+    this._phase = 'active-routine';
+    this._saveState();
+    this._renderActive();
+    this._startSessionTimer();
   }
 
   _renderSetup() {
@@ -238,39 +288,11 @@ class ActiveSessionView extends HTMLElement {
       this._phase = 'active-free';
       this._saveState();
       this._renderFreeActive();
-      this._startTimer('free-timer');
+      this._startFreeTimer();
     } else {
       const id = this.querySelector('#session-routine-select').value;
       if (!id) return alert('Selecciona una rutina.');
-      this._selectedRoutine = await GymDB.routines.getWithExercises(id);
-      if (!this._selectedRoutine) return;
-
-      // Cargar historial de pesos antes de construir los logs
-      await this._buildLastWeightsMap();
-
-      this._logs = this._selectedRoutine.exercises.map(entry => {
-        const lastData = this._lastWeights[entry.exerciseId];
-        const suggestedWeight = lastData ? lastData.weight : 0;
-        const suggestedReps   = lastData ? lastData.reps   : (entry.reps || 10);
-        return {
-          exerciseId:   entry.exerciseId,
-          exerciseName: entry.exercise ? entry.exercise.name : 'Ejercicio',
-          muscleGroup:  entry.exercise ? entry.exercise.muscleGroup : '',
-          exerciseImage: entry.exercise ? (entry.exercise.image || '') : '',
-          lastData,
-          sets: Array.from({ length: entry.sets || 3 }, () => ({
-            weight: suggestedWeight,
-            reps:   suggestedReps,
-            done:   false
-          }))
-        };
-      });
-
-      this._startTime = Date.now();
-      this._phase = 'active-routine';
-      this._saveState();
-      this._renderActive();
-      this._startTimer('session-timer');
+      await this._startRoutineById(id);
     }
   }
 
@@ -281,26 +303,23 @@ class ActiveSessionView extends HTMLElement {
     this.innerHTML = `
       <div class="page-header" style="align-items:flex-start;">
         <div style="flex:1;">
-          <h1 class="page-title" style="color:#FFFFFF;">${this._freeSessionName}</h1>
+          <h1 class="page-title">${this._freeSessionName}</h1>
           <p class="page-subtitle">Sesion libre en curso</p>
           ${this._freeNotes ? `<p style="font-size:13px; color:var(--text-muted); margin-top:6px; font-style:italic;">${this._freeNotes}</p>` : ''}
         </div>
-        <div style="text-align:right; background:rgba(255,255,255,0.03); padding:12px 20px; border-radius:14px; border:1px solid var(--border);">
-          <div class="chrono-display" id="free-timer" style="font-size:38px; letter-spacing:3px; color:#FFFFFF;">00:00</div>
+        <div style="text-align:right; background:rgba(128,128,128,0.08); padding:12px 20px; border-radius:14px; border:1px solid var(--border);">
+          <div class="chrono-display" id="free-timer" style="font-size:38px; letter-spacing:3px; color:var(--text-primary);">00:00</div>
           <p style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:4px;">Tiempo Activo</p>
         </div>
       </div>
 
       <div class="view-content" style="max-width:520px; margin:0 auto;">
-        <div class="glass-card" style="padding:40px; text-align:center; margin-bottom:24px;">
-          <div style="width:80px; height:80px; border-radius:50%; border:3px solid var(--accent-light); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-            <i class="ph-fill ph-timer" style="font-size:40px; color:var(--accent-light);"></i>
+        <div class="glass-card" style="padding:48px 40px; text-align:center; margin-bottom:24px;">
+          <div style="width:88px; height:88px; border-radius:50%; border:3px solid var(--accent-light); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+            <i class="ph-fill ph-timer" style="font-size:44px; color:var(--accent-light);"></i>
           </div>
-          <p style="font-size:15px; color:var(--text-secondary);">El tiempo corre. Dale todo.</p>
-          <div id="free-extra-notes" style="margin-top:24px;">
-            <label class="form-label">Notas finales (opcional)</label>
-            <textarea id="free-final-notes" class="form-textarea" placeholder="Como te fue, distancia recorrida, etc..." style="background:#0B0E14; color:#FFF; margin-top:8px; min-height:80px;"></textarea>
-          </div>
+          <p style="font-size:17px; font-weight:800; color:var(--text-primary); margin-bottom:6px;">Dale todo!</p>
+          <p style="font-size:13px; color:var(--text-secondary);">Al finalizar podras agregar distancia, intensidad y notas.</p>
         </div>
 
         <div style="display:flex; gap:12px;">
@@ -318,21 +337,78 @@ class ActiveSessionView extends HTMLElement {
         window.location.hash = '#dashboard';
       }
     });
-    this.querySelector('#btn-finish-free').addEventListener('click', () => this._finishFree());
-    // Actualizar timer inmediatamente con tiempo transcurrido real
+    this.querySelector('#btn-finish-free').addEventListener('click', () => this._finishFreeFlow());
+    // Mostrar tiempo real inmediatamente
     const timerEl = this.querySelector('#free-timer');
     if (timerEl) timerEl.textContent = formatDuration(Date.now() - this._startTime);
   }
 
-  async _finishFree() {
+  _startFreeTimer() {
+    if (this._timerInterval) clearInterval(this._timerInterval);
+    this._timerInterval = setInterval(() => {
+      const el = this.querySelector('#free-timer');
+      if (el) el.textContent = formatDuration(Date.now() - this._startTime);
+    }, 1000);
+  }
+
+  _finishFreeFlow() {
     const dur = Date.now() - this._startTime;
-    const notesEl = this.querySelector('#free-final-notes');
-    const finalNotes = notesEl ? notesEl.value.trim() : '';
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;display:flex;align-items:flex-end;justify-content:center;padding:0 16px;';
+    overlay.innerHTML = `
+      <div style="background:var(--bg-panel);border-radius:24px 24px 0 0;padding:28px 24px;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;">
+        <h3 style="font-size:20px;font-weight:900;color:var(--text-primary);margin-bottom:4px;">Sesion finalizada! 🏁</h3>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Agrega los detalles de tu actividad</p>
+        <div style="display:grid; gap:14px;">
+          <div>
+            <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Como te fue</label>
+            <textarea id="free-journal" class="form-textarea" placeholder="Buena carrera, mejore mi tiempo, me senti con energia..." style="background:var(--bg-card);color:var(--text-primary);min-height:80px;width:100%;border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;"></textarea>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Distancia</label>
+              <input id="free-distance" type="text" class="form-input" placeholder="Ej: 5 km" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Intensidad</label>
+              <select id="free-intensity" class="form-select" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);">
+                <option value="">— Seleccionar —</option>
+                <option>Baja</option><option>Media</option><option>Alta</option><option>Maxima</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Detalle adicional</label>
+            <input id="free-extra" type="text" class="form-input" placeholder="Ritmo, calorias, nivel completado..." style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);">
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:20px;">
+          <button id="cancel-free-finish" class="btn btn-ghost" style="flex:1;justify-content:center;">Seguir</button>
+          <button id="confirm-free-finish" class="btn btn-success" style="flex:2;justify-content:center;padding:16px;font-size:15px;font-weight:800;"><i class="ph-bold ph-flag-checkered"></i> GUARDAR</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#cancel-free-finish').onclick = () => overlay.remove();
+    overlay.querySelector('#confirm-free-finish').onclick = () => {
+      const journal   = overlay.querySelector('#free-journal').value.trim();
+      const distance  = overlay.querySelector('#free-distance').value.trim();
+      const intensity = overlay.querySelector('#free-intensity').value;
+      const extra     = overlay.querySelector('#free-extra').value.trim();
+      overlay.remove();
+      this._finishFree(dur, journal, distance, intensity, extra);
+    };
+  }
+
+  async _finishFree(dur, journal = '', distance = '', intensity = '', extra = '') {
+    const parts = [this._freeNotes, distance && `Distancia: ${distance}`, intensity && `Intensidad: ${intensity}`, extra].filter(Boolean);
+    const notes = parts.join(' | ');
     try {
       await GymDB.sessions.add({
         type:     'free',
         name:     this._freeSessionName,
-        notes:    finalNotes || this._freeNotes,
+        notes,
+        journal,
         duration: dur,
         logs:     []
       });
@@ -344,6 +420,7 @@ class ActiveSessionView extends HTMLElement {
       alert('Error al guardar la sesion: ' + err.message);
     }
   }
+
 
   // ======================================================
   //  MODO RUTINA — FLASHCARD (Fase 5)
@@ -691,7 +768,11 @@ class ActiveSessionView extends HTMLElement {
   }
 
   _startTimer(elId) {
-    this._startSessionTimer();
+    if (elId === 'free-timer') {
+      this._startFreeTimer();
+    } else {
+      this._startSessionTimer();
+    }
   }
 
   _startRestTimer(seconds) {
