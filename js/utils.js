@@ -141,19 +141,39 @@ function formatDuration(ms) {
   return `${p(mins)}:${p(secs)}`;
 }
 
-// --- Colores por Musculo ---
+// --- Colores por Musculo (nombres reales del sistema) ---
 function getMuscleColor(muscle) {
   const colors = {
-    'Pecho': '#3b82f6',
-    'Espalda': '#10b981',
-    'Piernas': '#f59e0b',
-    'Hombros': '#8b5cf6',
-    'Biceps': '#ec4899',
-    'Triceps': '#6366f1',
-    'Core': '#14b8a6',
-    'Cardio': '#f43f5e'
+    // Empuje
+    'Pectorales':                    '#3B82F6', // azul
+    'Deltoides (Hombros)':           '#8B5CF6', // violeta
+    'Tr\u00edceps':                  '#6366F1', // indigo
+    // Jale
+    'Dorsales':                      '#10B981', // verde esmeralda
+    'Trapecios':                     '#059669', // verde oscuro
+    'B\u00edceps':                   '#EC4899', // rosa
+    'Antebrazos':                    '#F472B6', // rosa claro
+    // Pierna
+    'Cu\u00e1driceps':               '#F59E0B', // ambar
+    'Isquiotibiales (Femorales)':    '#F97316', // naranja
+    'Gl\u00fateos':                  '#EF4444', // rojo
+    'Pantorrillas (Gemelos)':        '#FB923C', // naranja claro
+    // Core
+    'Abdominales':                   '#14B8A6', // teal
+    'Lumbares':                      '#0EA5E9', // celeste
+    // Cardio
+    'Cardio':                        '#F43F5E', // rosa fuerte
   };
-  return colors[muscle] || '#94a3b8';
+  // Si el nombre exacto no existe, usar paleta de fallback para grupos custom
+  if (colors[muscle]) return colors[muscle];
+  const fallbackPalette = [
+    '#A78BFA','#34D399','#FCD34D','#F87171','#60A5FA',
+    '#C084FC','#4ADE80','#FBBF24','#FB7185','#38BDF8'
+  ];
+  // Hash del nombre para asignar color consistente
+  let hash = 0;
+  for (let i = 0; i < muscle.length; i++) hash = (hash * 31 + muscle.charCodeAt(i)) | 0;
+  return fallbackPalette[Math.abs(hash) % fallbackPalette.length];
 }
 
 // --- Imagenes ---

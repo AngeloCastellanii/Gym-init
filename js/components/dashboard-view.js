@@ -372,28 +372,80 @@ class DashboardView extends HTMLElement {
   _renderCharts(sessions) {
     if (typeof Chart === 'undefined') return;
     const routineSessions = sessions.filter(s => s.type !== 'free' && s.logs && s.logs.length);
+    const unit = unitLabel();
+    const textMuted = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#6B7280';
 
-    // 1. Progreso de Volumen
-    const volSessions = routineSessions.slice(-10);
+    // ── 1. Progreso de Volumen ──────────────────────────────
+    const volSessions = routineSessions.slice(-12);
     this._buildChart('canvas-volume', 'line',
       volSessions.map(s => formatDate(s.date).split(' ')[0]),
-      [{ label:'Volumen', data: volSessions.map(s => calcTotalVolume(s.logs)),
+      [{ label:`Volumen (${unit})`, data: volSessions.map(s => displayWeight(calcTotalVolume(s.logs))),
          borderColor:'#60A5FA', backgroundColor:'#60A5FA18', fill:true,
-         tension:0.4, borderWidth:2, pointRadius:3, pointBackgroundColor:'#60A5FA' }]
+         tension:0.4, borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#60A5FA',
+         pointHoverRadius:6 }],
+      false,
+      {
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => `Sesion: ${items[0].label}`,
+              label: (item) => ` Volumen: ${item.raw.toLocaleString()} ${unit}`
+            }
+          }
+        },
+        scales: {
+          y: {
+            title: { display: true, text: unit, color: textMuted, font:{ size:10, weight:'700' } },
+            grid: { color:'rgba(128,128,128,0.08)', drawBorder:false },
+            ticks: { color: textMuted, font:{ size:10 }, padding:8,
+              callback: (v) => v.toLocaleString() }
+          },
+          x: { grid:{ display:false }, ticks:{ color: textMuted, font:{ size:10 }, padding:6, maxRotation:30 } }
+        }
+      }
     );
 
-    // 2. Frecuencia
+    // ── 2. Frecuencia de Sesiones ───────────────────────────
     const freqData = [0,0,0,0,0,0,0];
     sessions.forEach(s => {
       const idx = new Date(s.date).getDay();
       freqData[idx === 0 ? 6 : idx - 1]++;
     });
+    const maxFreq = Math.max(...freqData, 1);
+    const freqColors = freqData.map(v => {
+      if (v === 0)          return 'rgba(128,128,128,0.15)';
+      if (v < maxFreq * 0.5) return '#34D399';
+      return '#10B981';
+    });
     this._buildChart('canvas-freq', 'bar',
-      ['L','M','M','J','V','S','D'],
-      [{ label:'Sesiones', data:freqData, backgroundColor:'#10B981', borderRadius:5 }]
+      ['Lun','Mar','Mie','Jue','Vie','Sab','Dom'],
+      [{ label:'Sesiones', data:freqData, backgroundColor:freqColors,
+         borderRadius:6, borderSkipped:false }],
+      false,
+      {
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => `${items[0].label}`,
+              label: (item) => ` ${item.raw} sesion${item.raw !== 1 ? 'es' : ''} este dia`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true, max: maxFreq + 1,
+            title: { display: true, text: 'Sesiones', color: textMuted, font:{ size:10 } },
+            grid: { color:'rgba(128,128,128,0.08)', drawBorder:false },
+            ticks: { color: textMuted, font:{ size:10 }, stepSize: 1, padding:8 }
+          },
+          x: { grid:{ display:false }, ticks:{ color: textMuted, font:{ size:10 }, padding:6 } }
+        }
+      }
     );
 
-    // 3. Distribución Muscular
+    // ── 3. Distribución Muscular ────────────────────────────
     const muscleCount = {};
     routineSessions.forEach(s => {
       s.logs.forEach(log => {
@@ -404,77 +456,160 @@ class DashboardView extends HTMLElement {
     });
     let mLabels = Object.keys(muscleCount);
     let mVals   = Object.values(muscleCount);
+    const mTotal = mVals.reduce((a, v) => a + v, 0);
     let mColors = mLabels.map(m => getMuscleColor(m));
     if (!mLabels.length) { mLabels = ['Sin datos']; mVals = [1]; mColors = ['#374151']; }
     this._buildChart('canvas-dist', 'doughnut', mLabels,
-      [{ data:mVals, backgroundColor:mColors, borderWidth:0 }], true
+      [{ data:mVals, backgroundColor:mColors, borderWidth:2,
+         borderColor: 'transparent', hoverBorderColor: '#fff',
+         hoverOffset: 8 }],
+      true,
+      {
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: textMuted,
+              font:{ size:11, weight:'700' },
+              boxWidth:10, usePointStyle:true, pointStyle:'circle',
+              padding:14,
+              generateLabels: (chart) => {
+                return chart.data.labels.map((label, i) => ({
+                  text: `${label}  ${mVals[i]} series`,
+                  fillStyle: mColors[i],
+                  strokeStyle: mColors[i],
+                  pointStyle: 'circle'
+                }));
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (item) => {
+                const pct = Math.round(item.raw / mTotal * 100);
+                return ` ${item.label}: ${item.raw} series (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
     );
 
-    // 4. Intensidad Promedio
-    const intSessions = routineSessions.slice(-10);
+    // ── 4. Intensidad Promedio ──────────────────────────────
+    const intSessions = routineSessions.slice(-12);
     const intData = intSessions.map(s => {
-      const sets = s.logs.flatMap(l => (l.sets || []));
+      const sets = s.logs.flatMap(l => (l.sets || []).filter(st => st.done !== false));
       if (!sets.length) return 0;
-      return Math.round(sets.reduce((a, st) => a + (st.weight || 0), 0) / sets.length);
+      return parseFloat((sets.reduce((a, st) => a + (st.weight || 0), 0) / sets.length).toFixed(1));
     });
     this._buildChart('canvas-intensity', 'line',
       intSessions.map(s => formatDate(s.date).split(' ')[0]),
-      [{ label:'Peso prom.', data:intData,
+      [{ label:`Peso promedio (${unit})`, data: intData.map(v => displayWeight(v)),
          borderColor:'#A78BFA', backgroundColor:'#A78BFA18', fill:true,
-         tension:0.4, borderWidth:2, pointRadius:3, pointBackgroundColor:'#A78BFA' }]
+         tension:0.4, borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#A78BFA',
+         pointHoverRadius:6 }],
+      false,
+      {
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => `Sesion: ${items[0].label}`,
+              label: (item) => ` Peso prom. por serie: ${item.raw} ${unit}`
+            }
+          }
+        },
+        scales: {
+          y: {
+            title: { display: true, text: unit, color: textMuted, font:{ size:10, weight:'700' } },
+            grid: { color:'rgba(128,128,128,0.08)', drawBorder:false },
+            ticks: { color: textMuted, font:{ size:10 }, padding:8 }
+          },
+          x: { grid:{ display:false }, ticks:{ color: textMuted, font:{ size:10 }, padding:6, maxRotation:30 } }
+        }
+      }
     );
   }
 
-  _buildChart(id, type, labels, datasets, isDoughnut = false) {
+  _buildChart(id, type, labels, datasets, isDoughnut = false, extraOptions = {}) {
     const canvas = document.getElementById(id);
     if (!canvas) return;
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
-
     const ctx = canvas.getContext('2d');
-    
-    // Gradiente para lineas (Fase 4)
-    let gradient = null;
-    if (type === 'line' && datasets[0].borderColor) {
-      gradient = ctx.createLinearGradient(0, 0, 0, 200);
+
+    // Gradiente suave para graficas de linea
+    if (type === 'line' && datasets[0] && datasets[0].borderColor) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 200);
       gradient.addColorStop(0, datasets[0].borderColor + '44');
       gradient.addColorStop(1, datasets[0].borderColor + '00');
       datasets[0].backgroundColor = gradient;
     }
 
-    new Chart(ctx, {
-      type,
-      data: { labels, datasets },
-      options: isDoughnut ? {
-        responsive: true, maintainAspectRatio: false,
-        cutout: '75%',
-        plugins: {
-          legend: { 
-            position: 'right', 
-            labels: { 
-              color:'#9CA3AF', 
-              font:{ size:11, weight:'600' }, 
-              boxWidth:8, 
-              usePointStyle: true,
-              padding:12 
-            } 
+    // Opciones base segun tipo
+    const baseOptions = isDoughnut ? {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '72%',
+      animation: { animateRotate: true, duration: 600 },
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            color: '#9CA3AF',
+            font:{ size:11, weight:'700' },
+            boxWidth:10, usePointStyle:true, pointStyle:'circle', padding:14
           }
-        }
-      } : {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { 
-            grid:{ color:'rgba(255,255,255,0.03)', drawBorder:false }, 
-            ticks:{ color:'#6B7280', font:{ size:10, weight:'600' }, beginAtZero:true, padding:8 } 
-          },
-          x: { 
-            grid:{ display:false }, 
-            ticks:{ color:'#6B7280', font:{ size:10, weight:'600' }, padding:8 } 
-          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(15,23,42,0.95)',
+          titleColor: '#fff',
+          bodyColor: '#9CA3AF',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          padding: 10
         }
       }
-    });
+    } : {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15,23,42,0.95)',
+          titleColor: '#fff',
+          bodyColor: '#9CA3AF',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          padding: 10
+        }
+      },
+      scales: {
+        y: {
+          grid: { color:'rgba(128,128,128,0.08)', drawBorder:false },
+          ticks: { color:'#6B7280', font:{ size:10 }, padding:8 }
+        },
+        x: {
+          grid: { display:false },
+          ticks: { color:'#6B7280', font:{ size:10 }, padding:6 }
+        }
+      }
+    };
+
+    // Merge profundo de extraOptions sobre baseOptions
+    const deepMerge = (target, source) => {
+      for (const key of Object.keys(source)) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          if (!target[key]) target[key] = {};
+          deepMerge(target[key], source[key]);
+        } else {
+          target[key] = source[key];
+        }
+      }
+      return target;
+    };
+    const options = deepMerge(baseOptions, extraOptions);
+
+    new Chart(ctx, { type, data: { labels, datasets }, options });
   }
 
   // -------------------------------------------------------
