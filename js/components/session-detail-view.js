@@ -92,37 +92,55 @@ class SessionDetailView extends HTMLElement {
           </div>
         </div>
 
+        <!-- Diario Post-Sesion -->
+        ${this._session.journal ? `
+          <div class="glass-card" style="padding:20px; margin-bottom:28px; border-left:3px solid var(--accent-light); display:flex; gap:14px; align-items:flex-start;">
+            <div style="width:36px; height:36px; border-radius:10px; background:var(--accent)22; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <i class="ph-bold ph-note-pencil" style="color:var(--accent-light); font-size:18px;"></i>
+            </div>
+            <div style="flex:1;">
+              <p style="font-size:10px; font-weight:800; color:var(--accent-light); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Diario de Sesion</p>
+              <p style="font-size:14px; color:var(--text-primary); line-height:1.6; font-style:italic;">"${this._session.journal}"</p>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Lista de ejercicios realizados -->
         <div style="display:flex; flex-direction:column; gap:20px;">
           ${this._session.logs.map((log, i) => {
             const exInfo = exercises.find(e => e.id === log.exerciseId);
             const name = exInfo ? exInfo.name : 'Ejercicio';
             return `
-              <div class="glass-card view-enter" style="padding:0; overflow:hidden; border-color:rgba(255,255,255,0.06);">
-                <div style="padding:16px 24px; background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+              <div class="glass-card view-enter" style="padding:0; overflow:hidden;">
+                <div style="padding:16px 24px; background:rgba(128,128,128,0.05); border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
                   <div style="display:flex; align-items:center; gap:16px;">
-                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1); font-weight:900; color:var(--accent-light); font-size:13px;">${i+1}</div>
-                    <h3 style="font-size:18px; font-weight:700; color:#FFFFFF;">${name}</h3>
+                    <div style="width:32px; height:32px; border-radius:8px; background:var(--accent)22; display:flex; align-items:center; justify-content:center; border:1px solid var(--accent)33; font-weight:900; color:var(--accent-light); font-size:13px;">${i+1}</div>
+                    <div>
+                      <h3 style="font-size:17px; font-weight:700; color:var(--text-primary);">${name}</h3>
+                      ${exInfo && exInfo.muscleGroup ? `<span style="font-size:11px; color:var(--text-muted);">${exInfo.muscleGroup}</span>` : ''}
+                    </div>
                   </div>
-                  <span class="badge badge-slate">${exInfo ? exInfo.muscleGroup : ''}</span>
+                  <span class="badge badge-slate">${log.sets.length} series</span>
                 </div>
                 <div style="padding:16px 24px;">
                    <table style="width:100%; border-collapse:collapse;">
                      <thead>
-                       <tr style="text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid rgba(255,255,255,0.05);">
-                         <th style="padding:12px 0;">SET</th>
-                         <th style="padding:12px 0;">PESO (${unitLabel()})</th>
-                         <th style="padding:12px 0;">REPETICIONES</th>
-                         <th style="padding:12px 0; text-align:right;">ESTADO</th>
+                       <tr style="text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border);">
+                         <th style="padding:10px 0;">Set</th>
+                         <th style="padding:10px 0;">Peso (${unitLabel()})</th>
+                         <th style="padding:10px 0;">Reps</th>
+                         <th style="padding:10px 0;">RPE</th>
+                         <th style="padding:10px 0; text-align:right;">Estado</th>
                        </tr>
                      </thead>
                      <tbody>
                        ${log.sets.map((s, si) => `
-                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
-                           <td style="padding:14px 0; font-weight:800; color:var(--text-muted); font-size:13px;">${si+1}</td>
-                           <td style="padding:14px 0; font-weight:700; color:#FFFFFF; font-size:15px;">${displayWeight(s.weight)}</td>
-                           <td style="padding:14px 0; font-weight:700; color:#FFFFFF; font-size:15px;">${s.reps}</td>
-                           <td style="padding:14px 0; text-align:right;">
+                         <tr style="border-bottom:1px solid var(--border-subtle);">
+                           <td style="padding:12px 0; font-weight:800; color:var(--text-muted); font-size:13px;">${si+1}</td>
+                           <td style="padding:12px 0; font-weight:700; color:var(--text-primary); font-size:15px;">${displayWeight(s.weight)}</td>
+                           <td style="padding:12px 0; font-weight:700; color:var(--text-primary); font-size:15px;">${s.reps}</td>
+                           <td style="padding:12px 0; font-weight:700; color:var(--accent-light); font-size:13px;">${s.rpe ? s.rpe : '—'}</td>
+                           <td style="padding:12px 0; text-align:right;">
                              <i class="ph-fill ph-check-circle" style="color:var(--success); font-size:20px;"></i>
                            </td>
                          </tr>
@@ -146,3 +164,4 @@ class SessionDetailView extends HTMLElement {
 }
 
 customElements.define('session-detail-view', SessionDetailView);
+

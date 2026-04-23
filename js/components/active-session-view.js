@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================
  *  <active-session-view> — Tracker de Entrenamiento
  *  Soporta: Modo Rutina, Modo Libre, Persistencia entre vistas
@@ -23,6 +23,11 @@ class ActiveSessionView extends HTMLElement {
     this._freeSessionName = '';
     this._freeNotes = '';
     this._phase = 'setup'; // 'setup' | 'active-routine' | 'active-free'
+    // Duracion del descanso (en segundos), cargada desde localStorage
+    try {
+      this._restDuration = parseInt(localStorage.getItem('gym-rest-duration') || '90', 10) || 90;
+    } catch { this._restDuration = 90; }
+    this._currentExIdx = 0;
   }
 
   connectedCallback() {
@@ -251,6 +256,7 @@ class ActiveSessionView extends HTMLElement {
           exerciseId:   entry.exerciseId,
           exerciseName: entry.exercise ? entry.exercise.name : 'Ejercicio',
           muscleGroup:  entry.exercise ? entry.exercise.muscleGroup : '',
+          exerciseImage: entry.exercise ? (entry.exercise.image || '') : '',
           lastData,
           sets: Array.from({ length: entry.sets || 3 }, () => ({
             weight: suggestedWeight,
@@ -381,10 +387,54 @@ class ActiveSessionView extends HTMLElement {
           <div id="session-timer" class="chrono-display" style="font-size:18px; font-weight:900; color:var(--text-primary); letter-spacing:2px;">00:00</div>
           <p style="font-size:8px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:1px;">Sesion</p>
         </div>
+        <!-- Configurar Descanso (siempre visible) -->
+        <div style="position:relative;">
+          <button onclick="this.closest('active-session-view')._openPreSessionRestConfig()" style="display:flex; flex-direction:column; align-items:center; gap:1px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:6px 10px; cursor:pointer; color:var(--text-muted);" title="Configurar tiempo de descanso">
+            <i class="ph-bold ph-timer" style="font-size:14px; color:var(--text-secondary);"></i>
+            <span style="font-size:8px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">${Math.floor(this._restDuration/60)}:${(this._restDuration%60).toString().padStart(2,'0')}</span>
+          </button>
+          <!-- Panel config pre-sesion -->
+          <div id="pre-rest-config-panel" style="display:none; position:absolute; top:calc(100% + 6px); right:0; background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; padding:12px; z-index:200; min-width:220px; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+            <p style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Tiempo de Descanso</p>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+              ${[30, 60, 90, 120, 180, 300].map(s => `
+                <button onclick="this.closest('active-session-view')._setRestDuration(${s}); this.closest('#pre-rest-config-panel').style.display='none';" style="padding:5px 10px; border-radius:20px; border:1px solid ${this._restDuration === s ? 'var(--accent-light)' : 'var(--border)'}; background:${this._restDuration === s ? 'var(--accent)22' : 'transparent'}; color:${this._restDuration === s ? 'var(--accent-light)' : 'var(--text-secondary)'}; font-size:11px; font-weight:700; cursor:pointer;">
+                  ${s < 60 ? s + 's' : s === 60 ? '1 min' : s === 90 ? '1:30' : s === 120 ? '2 min' : s === 180 ? '3 min' : '5 min'}
+                </button>
+              `).join('')}
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="number" id="pre-rest-custom-input" min="10" max="600" value="${this._restDuration}" placeholder="Seg" class="form-input" style="height:32px; font-size:12px; text-align:center; flex:1; background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary);">
+              <button onclick="this.closest('active-session-view')._setRestDuration(parseInt(this.closest('[id=pre-rest-config-panel]').querySelector('#pre-rest-custom-input').value)||90); this.closest('#pre-rest-config-panel').style.display='none';" style="padding:6px 12px; border-radius:8px; background:var(--accent); color:#fff; border:none; font-size:11px; font-weight:800; cursor:pointer;">OK</button>
+            </div>
+          </div>
+        </div>
         <!-- Timer Descanso -->
-        <div id="rest-timer-wrap" style="display:none; text-align:center; background:#10B98118; border:1px solid #10B98155; border-radius:10px; padding:6px 14px; cursor:pointer;" onclick="this.closest('active-session-view')._cancelRestTimer()">
-          <div id="rest-timer" style="font-size:18px; font-weight:900; color:var(--success); letter-spacing:2px;">1:30</div>
-          <p style="font-size:8px; font-weight:800; color:var(--success); text-transform:uppercase; letter-spacing:0.1em; margin-top:1px;">Descanso ✕</p>
+        <div id="rest-timer-wrap" style="display:none; position:relative;">
+          <div style="text-align:center; background:#10B98118; border:1px solid #10B98155; border-radius:10px; padding:6px 10px; display:flex; align-items:center; gap:8px;">
+            <div onclick="this.closest('active-session-view')._cancelRestTimer()" style="cursor:pointer; flex:1; text-align:center;">
+              <div id="rest-timer" style="font-size:18px; font-weight:900; color:var(--success); letter-spacing:2px;">1:30</div>
+              <p style="font-size:8px; font-weight:800; color:var(--success); text-transform:uppercase; letter-spacing:0.1em; margin-top:1px;">Descanso ✕</p>
+            </div>
+            <button onclick="this.closest('active-session-view')._openRestConfig()" style="background:none; border:none; color:var(--success); cursor:pointer; padding:4px; opacity:0.7;" title="Cambiar duracion">
+              <i class="ph-bold ph-gear" style="font-size:14px;"></i>
+            </button>
+          </div>
+          <!-- Panel de configuracion del descanso (oculto por defecto) -->
+          <div id="rest-config-panel" style="display:none; position:absolute; top:calc(100% + 6px); right:0; background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; padding:12px; z-index:200; min-width:220px; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+            <p style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Tiempo de Descanso</p>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+              ${[30, 60, 90, 120, 180, 300].map(s => `
+                <button onclick="this.closest('active-session-view')._setRestDuration(${s})" style="padding:5px 10px; border-radius:20px; border:1px solid ${this._restDuration === s ? 'var(--success)' : 'var(--border)'}; background:${this._restDuration === s ? 'var(--success)22' : 'transparent'}; color:${this._restDuration === s ? 'var(--success)' : 'var(--text-secondary)'}; font-size:11px; font-weight:700; cursor:pointer;">
+                  ${s < 60 ? s + 's' : s === 60 ? '1 min' : s === 90 ? '1:30' : s === 120 ? '2 min' : s === 180 ? '3 min' : '5 min'}
+                </button>
+              `).join('')}
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="number" id="rest-custom-input" min="10" max="600" value="${this._restDuration}" placeholder="Seg" class="form-input" style="height:32px; font-size:12px; text-align:center; flex:1; background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary);">
+              <button onclick="this.closest('active-session-view')._setRestDuration(parseInt(this.closest('[id=rest-config-panel]').querySelector('#rest-custom-input').value)||90)" style="padding:6px 12px; border-radius:8px; background:var(--accent); color:#fff; border:none; font-size:11px; font-weight:800; cursor:pointer;">OK</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -474,6 +524,14 @@ class ActiveSessionView extends HTMLElement {
 
     return `
       <div class="glass-card view-enter" style="padding:0; overflow:hidden; border:${allDone ? '2px solid var(--success)' : '1px solid var(--border)'}; transition:border-color 0.3s;">
+        <!-- Imagen del Ejercicio -->
+        ${log.exerciseImage ? `
+          <div style="width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; max-height:220px;">
+            <img src="${log.exerciseImage}" alt="${log.exerciseName}"
+              style="width:100%; height:100%; object-fit:contain; display:block;">
+          </div>
+        ` : ''}
+
         <!-- Cabecera Ejercicio -->
         <div style="padding:20px 24px 16px; background:rgba(255,255,255,0.02);">
           <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
@@ -578,7 +636,7 @@ class ActiveSessionView extends HTMLElement {
 
     // Si se acaba de completar el ultimo set, iniciar descanso y auto-avanzar
     if (!wasAllDone && nowAllDone) {
-      this._startRestTimer(90); // 90s por defecto
+      this._startRestTimer(this._restDuration); // duracion configurada por el usuario
       // Mostrar notificacion visual
       this._renderActive();
       setTimeout(() => {
@@ -636,8 +694,9 @@ class ActiveSessionView extends HTMLElement {
     this._startSessionTimer();
   }
 
-  _startRestTimer(seconds = 90) {
-    this._restEndTime = Date.now() + seconds * 1000;
+  _startRestTimer(seconds) {
+    const dur = seconds ?? this._restDuration;
+    this._restEndTime = Date.now() + dur * 1000;
     this._resumeRestTimer();
   }
 
@@ -671,6 +730,44 @@ class ActiveSessionView extends HTMLElement {
     this._restEndTime = null;
     const wrap = this.querySelector('#rest-timer-wrap');
     if (wrap) wrap.style.display = 'none';
+  }
+
+  _openRestConfig() {
+    const panel = this.querySelector('#rest-config-panel');
+    if (!panel) return;
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    // Cerrar al hacer click fuera
+    if (panel.style.display === 'block') {
+      setTimeout(() => {
+        const close = (e) => {
+          if (!panel.contains(e.target)) {
+            panel.style.display = 'none';
+            document.removeEventListener('click', close);
+          }
+        };
+        document.addEventListener('click', close);
+      }, 100);
+    }
+  }
+
+  _setRestDuration(secs) {
+    const val = Math.max(10, Math.min(600, parseInt(secs) || 90));
+    this._restDuration = val;
+    try { localStorage.setItem('gym-rest-duration', String(val)); } catch {}
+    // Cerrar el panel
+    const panel = this.querySelector('#rest-config-panel');
+    if (panel) panel.style.display = 'none';
+    // Si el timer esta corriendo, reiniciarlo con la nueva duracion
+    if (this._restEndTime) {
+      this._startRestTimer(val);
+    }
+    // Refrescar los botones del panel si sigue abierto (por si re-renderizan)
+    const mins = Math.floor(val / 60);
+    const scs  = val % 60;
+    const restEl = this.querySelector('#rest-timer');
+    if (restEl && !this._restEndTime) {
+      restEl.textContent = `${mins}:${scs.toString().padStart(2, '0')}`;
+    }
   }
 
   _cancelSession() {

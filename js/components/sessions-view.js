@@ -130,6 +130,7 @@ class SessionsView extends HTMLElement {
               <span><i class="ph ph-clock"></i> ${formatDuration(s.duration)}</span>
               ${!isFree ? `<span><i class="ph ph-list-checks"></i> ${(s.logs||[]).length} ejercicios</span>` : ''}
               ${isFree ? `<span class="badge badge-success" style="font-size:9px; padding:3px 8px;">LIBRE</span>` : ''}
+              ${s.journal ? `<span style="display:inline-flex; align-items:center; gap:4px; color:var(--accent-light); font-size:11px; font-weight:600;"><i class="ph-bold ph-note-pencil" style="font-size:11px;"></i> Diario</span>` : ''}
             </div>
           </div>
 
