@@ -123,13 +123,7 @@ class DashboardView extends HTMLElement {
       </div>
     `;
 
-    // Evento unidad
-    this.querySelector('#unit-toggle').addEventListener('click', () => {
-      setWeightUnit(getWeightUnit() === 'kg' ? 'lb' : 'kg');
-      location.reload();
-    });
-
-    // Evento unidad
+    // Evento unidad (toggle Kg/Lb)
     this.querySelector('#unit-toggle').addEventListener('click', () => {
       setWeightUnit(getWeightUnit() === 'kg' ? 'lb' : 'kg');
       location.reload();
@@ -144,6 +138,24 @@ class DashboardView extends HTMLElement {
         this._update();
       });
     });
+
+    // Re-renderizar charts cuando cambia el tema para que los colores
+    // de la leyenda (generateLabels) y los ejes se recalculen con las
+    // variables CSS del nuevo tema.
+    this._themeChangeHandler = () => {
+      if (this._sessions.length > 0 || this._exercises.length > 0) {
+        // Pequeño delay para que el DOM aplique las nuevas variables CSS
+        setTimeout(() => this._update(), 50);
+      }
+    };
+    window.addEventListener('theme-changed', this._themeChangeHandler);
+  }
+
+  disconnectedCallback() {
+    // Limpiar el listener al desmontar el componente
+    if (this._themeChangeHandler) {
+      window.removeEventListener('theme-changed', this._themeChangeHandler);
+    }
   }
 
   _getProfile() {
