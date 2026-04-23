@@ -210,22 +210,22 @@ class DashboardView extends HTMLElement {
 
     const kpis = `
       <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px;">
-        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
-          <p style="font-size:18px; font-weight:800; color:#FFF;">${latest.weight}</p>
+        <div style="text-align:center; padding:12px 8px; background:rgba(128,128,128,0.06); border-radius:10px; border:1px solid var(--border);">
+          <p style="font-size:18px; font-weight:800; color:var(--text-primary);">${latest.weight}</p>
           <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Actual</p>
         </div>
-        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
+        <div style="text-align:center; padding:12px 8px; background:rgba(128,128,128,0.06); border-radius:10px; border:1px solid var(--border);">
           <p style="font-size:18px; font-weight:800; color:${trendColor}; display:flex; align-items:center; justify-content:center; gap:4px;">
             <i class="ph-bold ${trendIcon}" style="font-size:14px;"></i>${trendLabel}
           </p>
-          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">vs hace ${records.length - 1} días</p>
+          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">vs hace ${records.length - 1} dias</p>
         </div>
-        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
-          <p style="font-size:18px; font-weight:800; color:#FFF;">${minW}</p>
-          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Mínimo</p>
+        <div style="text-align:center; padding:12px 8px; background:rgba(128,128,128,0.06); border-radius:10px; border:1px solid var(--border);">
+          <p style="font-size:18px; font-weight:800; color:var(--text-primary);">${minW}</p>
+          <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Minimo</p>
         </div>
-        <div style="text-align:center; padding:12px 8px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid var(--border);">
-          <p style="font-size:18px; font-weight:800; color:#FFF;">${avg}</p>
+        <div style="text-align:center; padding:12px 8px; background:rgba(128,128,128,0.06); border-radius:10px; border:1px solid var(--border);">
+          <p style="font-size:18px; font-weight:800; color:var(--text-primary);">${avg}</p>
           <p style="font-size:10px; color:var(--text-muted); margin-top:2px;">${unit} — Promedio</p>
         </div>
       </div>
@@ -525,8 +525,8 @@ class DashboardView extends HTMLElement {
       <div class="glass-card" style="padding:20px;">
         <p style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.06em;">${title}</p>
         <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:10px;">
-          <span style="font-size:26px; font-weight:900; color:#FFFFFF; line-height:1;">${value === '—' ? '0' : value}</span>
-          <i class="ph-bold ${icon}" style="font-size:22px; color:${color}; opacity:0.25;"></i>
+          <span style="font-size:26px; font-weight:900; color:var(--text-primary); line-height:1;">${value === '—' ? '0' : value}</span>
+          <i class="ph-bold ${icon}" style="font-size:22px; color:${color}; opacity:0.6;"></i>
         </div>
       </div>
     `;
@@ -537,7 +537,7 @@ class DashboardView extends HTMLElement {
       <div class="glass-card" style="padding:20px;">
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
           <i class="ph-bold ${icon}" style="color:${color}; font-size:16px;"></i>
-          <span style="font-weight:700; font-size:13px; color:#FFFFFF;">${title}</span>
+          <span style="font-weight:700; font-size:13px; color:var(--text-primary);">${title}</span>
         </div>
         <div style="height:200px;">
           <canvas id="${canvasId}"></canvas>
