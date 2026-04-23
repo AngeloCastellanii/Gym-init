@@ -770,6 +770,23 @@ class ActiveSessionView extends HTMLElement {
     }
   }
 
+  _openPreSessionRestConfig() {
+    const panel = this.querySelector('#pre-rest-config-panel');
+    if (!panel) return;
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (panel.style.display === 'block') {
+      setTimeout(() => {
+        const close = (e) => {
+          if (!panel.contains(e.target)) {
+            panel.style.display = 'none';
+            document.removeEventListener('click', close);
+          }
+        };
+        document.addEventListener('click', close);
+      }, 100);
+    }
+  }
+
   _cancelSession() {
     this._clearState();
     if (this._timerInterval) clearInterval(this._timerInterval);
