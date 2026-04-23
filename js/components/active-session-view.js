@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================
  *  <active-session-view> — Tracker de Entrenamiento
  *  Soporta: Modo Rutina, Modo Libre, Persistencia entre vistas
@@ -340,91 +340,174 @@ class ActiveSessionView extends HTMLElement {
   }
 
   // ======================================================
-  //  MODO RUTINA
+  //  MODO RUTINA — FLASHCARD (Fase 5)
   // ======================================================
   _renderActive() {
-    this.innerHTML = `
-      <div class="page-header" style="align-items:flex-start; margin-bottom:24px;">
-        <div style="flex:1;">
-          <h1 class="page-title" style="font-size:22px; color:#FFFFFF;">${this._selectedRoutine ? this._selectedRoutine.name : 'Entrenamiento'}</h1>
-          <p class="page-subtitle">Entrenando • <span id="session-progress" style="color:var(--accent-light); font-weight:700;">0 series completadas</span></p>
-        </div>
-        <div style="text-align:right; background:rgba(255,255,255,0.03); padding:10px 16px; border-radius:12px; border:1px solid var(--border);">
-          <div class="chrono-display" id="session-timer" style="font-size:26px; color:#FFFFFF;">00:00</div>
-          <p style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:2px;">Tiempo Total</p>
-        </div>
-      </div>
+    this._currentExIdx = this._currentExIdx ?? 0;
+    const log = this._logs[this._currentExIdx];
+    if (!log) return;
 
-      <div class="view-content" id="active-tracker-list">
-        ${this._logs.map((log, i) => this._renderExCard(log, i)).join('')}
-        <div style="display:flex; gap:16px; margin-top:24px;">
-          <button class="btn btn-ghost" id="btn-cancel-routine" style="flex:1; justify-content:center;">Cancelar</button>
-          <button class="btn btn-success" id="btn-finish" style="flex:2; justify-content:center; padding:18px; font-size:16px; font-weight:800;">
-            <i class="ph-bold ph-flag-checkered"></i> FINALIZAR Y GUARDAR
-          </button>
-        </div>
-      </div>
-    `;
-    this.querySelector('#btn-cancel-routine').addEventListener('click', () => {
-      if (confirm('Cancelar sesion? El progreso se perdera.')) {
-        this._clearState();
-        if (this._timerInterval) clearInterval(this._timerInterval);
-        window.location.hash = '#dashboard';
-      }
-    });
-    this.querySelector('#btn-finish').addEventListener('click', () => this._finish());
-    // Actualizar timer con tiempo real transcurrido
-    const timerEl = this.querySelector('#session-timer');
-    if (timerEl) timerEl.textContent = formatDuration(Date.now() - this._startTime);
-    this._updateProgress();
-  }
+    const total = this._logs.length;
+    const doneExs = this._logs.filter(l => l.sets.every(s => s.done) && l.sets.length > 0).length;
+    const totalSets = this._logs.reduce((a, l) => a + l.sets.length, 0);
+    const doneSets  = this._logs.reduce((a, l) => a + l.sets.filter(s => s.done).length, 0);
+    const pct = totalSets ? Math.round(doneSets / totalSets * 100) : 0;
 
-  _renderExCard(log, i) {
-    const lastData = log.lastData;
-    const lastHint = lastData
-      ? `<span style="font-size:11px; color:var(--accent-light); font-weight:600; display:flex; align-items:center; gap:4px; margin-top:2px;">
-           <i class="ph-bold ph-clock-counter-clockwise" style="font-size:10px;"></i>
-           Ultima vez: ${lastData.weight} ${unitLabel()} x ${lastData.reps} reps
-         </span>`
-      : `<span style="font-size:11px; color:var(--text-muted); margin-top:2px;">Sin historial aun</span>`;
-
-    // Sugerencia de Sobrecarga (Fase 4)
-    let overloadHint = '';
-    if (lastData && lastData.weight > 0) {
-      const suggested = Math.ceil(lastData.weight * 1.025 * 2) / 2; // Incrementar 2.5% y redondear a 0.5
-      overloadHint = `
-        <div style="margin-top:10px; padding:8px 12px; background:var(--accent-light)15; border:1px dashed var(--accent-light)33; border-radius:8px; display:flex; align-items:center; gap:8px;">
-          <i class="ph-bold ph-lightning" style="color:var(--accent-light); font-size:14px;"></i>
-          <span style="font-size:11px; color:#FFF; font-weight:600;">Sobrecarga sugerida: <b style="color:var(--accent-light);">${suggested} ${unitLabel()}</b> (+2.5%)</span>
+    // Sugerencia de Sobrecarga
+    let overloadBadge = '';
+    if (log.lastData && log.lastData.weight > 0) {
+      const sug = Math.ceil(log.lastData.weight * 1.025 * 2) / 2;
+      overloadBadge = `
+        <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:var(--accent)18; border:1px dashed var(--accent-light)55; border-radius:20px; margin-top:8px;">
+          <i class="ph-bold ph-lightning" style="color:var(--accent-light); font-size:12px;"></i>
+          <span style="font-size:11px; color:var(--accent-light); font-weight:700;">Sugerido: ${sug} ${unitLabel()} (+2.5%)</span>
         </div>`;
     }
 
-    return `
-      <div class="glass-card view-enter" style="padding:0; overflow:hidden; margin-bottom:20px; border-color:rgba(255,255,255,0.06);">
-        <div style="padding:14px 20px; background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-subtle);">
-          <div style="display:flex; align-items:center; gap:14px;">
-            <div style="display:flex; flex-direction:column; align-items:center; background:rgba(0,0,0,0.2); border-radius:8px; padding:4px; border:1px solid rgba(255,255,255,0.05);">
-              <button class="order-btn" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0; height:14px;" onclick="this.closest('active-session-view')._moveEx(${i}, -1)">
-                <i class="ph-bold ph-caret-up" style="font-size:12px;"></i>
-              </button>
-              <span style="font-weight:900; color:var(--accent-light); font-size:12px; margin:2px 0;">${i + 1}</span>
-              <button class="order-btn" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0; height:14px;" onclick="this.closest('active-session-view')._moveEx(${i}, 1)">
-                <i class="ph-bold ph-caret-down" style="font-size:12px;"></i>
-              </button>
+    this.innerHTML = `
+      <!-- ─── BARRA SUPERIOR ─── -->
+      <div style="position:sticky; top:0; z-index:50; background:var(--bg-base); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; gap:12px;">
+        <div style="flex:1;">
+          <p style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">${this._selectedRoutine ? this._selectedRoutine.name : 'Entrenamiento'}</p>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+            <div style="flex:1; height:4px; background:var(--border); border-radius:99px; overflow:hidden;">
+              <div style="width:${pct}%; height:100%; background:var(--success); border-radius:99px; transition:width 0.4s ease;"></div>
             </div>
-            <div>
-              <h3 style="font-size:16px; font-weight:700; color:#FFFFFF;">${log.exerciseName}</h3>
-              ${lastHint}
-            </div>
+            <span style="font-size:10px; font-weight:800; color:var(--success);">${pct}%</span>
           </div>
-          <span class="badge badge-slate" style="opacity:0.8;">${log.muscleGroup}</span>
         </div>
-        <div style="padding:12px 20px;">
-          ${overloadHint}
-          <div id="ex-${i}-sets" style="margin-top:10px;">
-            ${log.sets.map((s, si) => this._renderSetRow(i, si, s)).join('')}
+        <!-- Timer Global -->
+        <div style="text-align:center; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:6px 14px;">
+          <div id="session-timer" class="chrono-display" style="font-size:18px; font-weight:900; color:var(--text-primary); letter-spacing:2px;">00:00</div>
+          <p style="font-size:8px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:1px;">Sesion</p>
+        </div>
+        <!-- Timer Descanso -->
+        <div id="rest-timer-wrap" style="display:none; text-align:center; background:#10B98118; border:1px solid #10B98155; border-radius:10px; padding:6px 14px; cursor:pointer;" onclick="this.closest('active-session-view')._cancelRestTimer()">
+          <div id="rest-timer" style="font-size:18px; font-weight:900; color:var(--success); letter-spacing:2px;">1:30</div>
+          <p style="font-size:8px; font-weight:800; color:var(--success); text-transform:uppercase; letter-spacing:0.1em; margin-top:1px;">Descanso ✕</p>
+        </div>
+      </div>
+
+      <!-- ─── NAVEGACION EJERCICIOS ─── -->
+      <div style="display:flex; gap:6px; padding:12px 20px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+        ${this._logs.map((l, i) => {
+          const allDone = l.sets.length > 0 && l.sets.every(s => s.done);
+          const partial = l.sets.some(s => s.done) && !allDone;
+          const bg = allDone ? 'var(--success)' : partial ? 'var(--warning,#F59E0B)' : 'var(--border)';
+          const active = i === this._currentExIdx;
+          return `<button onclick="this.closest('active-session-view')._goToEx(${i})"
+            style="flex-shrink:0; width:32px; height:32px; border-radius:50%; border:2px solid ${active ? 'var(--accent-light)' : bg}; background:${active ? 'var(--accent)' : allDone ? 'var(--success)' : 'transparent'}; color:${active || allDone ? '#fff' : 'var(--text-muted)'}; font-size:11px; font-weight:800; cursor:pointer; transition:all 0.2s;">
+            ${allDone ? '<i class="ph-bold ph-check" style="font-size:10px;"></i>' : i + 1}
+          </button>`;
+        }).join('')}
+      </div>
+
+      <!-- ─── FLASHCARD PRINCIPAL ─── -->
+      <div class="view-content" style="max-width:600px; margin:0 auto; padding-bottom:120px;">
+        <div id="flashcard-wrap">
+          ${this._renderFlashcard(log, this._currentExIdx)}
+        </div>
+
+        <!-- NAVEGACION PREV / NEXT -->
+        <div style="display:flex; gap:12px; margin-top:20px;">
+          <button id="btn-prev-ex" class="btn btn-ghost" style="flex:1; justify-content:center; height:50px;"
+            onclick="this.closest('active-session-view')._goToEx(${this._currentExIdx - 1})"
+            ${this._currentExIdx === 0 ? 'disabled style="opacity:0.3; flex:1; justify-content:center; height:50px;"' : ''}>
+            <i class="ph-bold ph-arrow-left"></i> Anterior
+          </button>
+          ${this._currentExIdx < total - 1 ? `
+            <button class="btn btn-primary" style="flex:2; justify-content:center; height:50px; font-weight:800;"
+              onclick="this.closest('active-session-view')._goToEx(${this._currentExIdx + 1})">
+              Siguiente <i class="ph-bold ph-arrow-right"></i>
+            </button>
+          ` : `
+            <button class="btn btn-success" style="flex:2; justify-content:center; height:50px; font-weight:800; font-size:15px;"
+              onclick="this.closest('active-session-view')._finishFlow()">
+              <i class="ph-bold ph-flag-checkered"></i> FINALIZAR
+            </button>
+          `}
+        </div>
+
+        <!-- BOTON CANCELAR -->
+        <button class="btn btn-ghost" style="width:100%; justify-content:center; margin-top:12px; color:var(--danger-light); opacity:0.7;"
+          onclick="if(confirm('Cancelar sesion? El progreso se perdera.')) { this.closest('active-session-view')._cancelSession(); }">
+          <i class="ph-bold ph-x-circle"></i> Cancelar Sesion
+        </button>
+      </div>
+    `;
+
+    // Aplicar tiempo real al timer
+    const timerEl = this.querySelector('#session-timer');
+    if (timerEl) timerEl.textContent = formatDuration(Date.now() - this._startTime);
+
+    // Arrancar timers
+    this._startSessionTimer();
+    if (this._restEndTime && Date.now() < this._restEndTime) {
+      this._resumeRestTimer();
+    }
+
+    // Scroll al ejercicio activo en la barra de navegacion
+    setTimeout(() => {
+      const navBtns = this.querySelectorAll('[onclick*="_goToEx"]');
+      if (navBtns[this._currentExIdx]) {
+        navBtns[this._currentExIdx].scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+      }
+    }, 100);
+  }
+
+  _renderFlashcard(log, exIdx) {
+    const lastHint = log.lastData
+      ? `<span style="font-size:12px; color:var(--accent-light); font-weight:600;"><i class="ph-bold ph-clock-counter-clockwise" style="font-size:10px;"></i> Ultima vez: ${log.lastData.weight} ${unitLabel()} × ${log.lastData.reps} reps</span>`
+      : `<span style="font-size:12px; color:var(--text-muted);">Sin historial aun</span>`;
+
+    let overloadBadge = '';
+    if (log.lastData && log.lastData.weight > 0) {
+      const sug = Math.ceil(log.lastData.weight * 1.025 * 2) / 2;
+      overloadBadge = `
+        <div style="display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:var(--accent)18; border:1px dashed var(--accent-light)55; border-radius:20px;">
+          <i class="ph-bold ph-lightning" style="color:var(--accent-light); font-size:11px;"></i>
+          <span style="font-size:11px; color:var(--accent-light); font-weight:700;">Sugerido hoy: ${sug} ${unitLabel()}</span>
+        </div>`;
+    }
+
+    const allDone = log.sets.length > 0 && log.sets.every(s => s.done);
+
+    return `
+      <div class="glass-card view-enter" style="padding:0; overflow:hidden; border:${allDone ? '2px solid var(--success)' : '1px solid var(--border)'}; transition:border-color 0.3s;">
+        <!-- Cabecera Ejercicio -->
+        <div style="padding:20px 24px 16px; background:rgba(255,255,255,0.02);">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span style="background:var(--accent); color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px;">EJERCICIO ${exIdx + 1} / ${this._logs.length}</span>
+                ${allDone ? '<span style="background:var(--success); color:#000; font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px;">✓ COMPLETADO</span>' : ''}
+              </div>
+              <h2 style="font-size:22px; font-weight:900; color:var(--text-primary); line-height:1.2; margin-top:6px;">${log.exerciseName}</h2>
+              <div style="display:flex; align-items:center; gap:10px; margin-top:6px; flex-wrap:wrap;">
+                <span class="badge badge-slate">${log.muscleGroup}</span>
+                ${lastHint}
+              </div>
+              ${overloadBadge ? `<div style="margin-top:10px;">${overloadBadge}</div>` : ''}
+            </div>
           </div>
-          <button class="btn btn-ghost" style="width:100%; margin-top:12px; height:40px; justify-content:center; border:1px dashed rgba(255,255,255,0.1);" onclick="this.closest('active-session-view')._addSet(${i})">
+        </div>
+
+        <!-- Sets -->
+        <div style="padding:0 24px 12px;">
+          <!-- Cabecera columnas -->
+          <div style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; padding:10px 0 6px; border-bottom:1px solid var(--border);">
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">#</span>
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">${unitLabel()}</span>
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">REPS</span>
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">RPE</span>
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">✓</span>
+            <span></span>
+          </div>
+          <div id="ex-${exIdx}-sets">
+            ${log.sets.map((s, si) => this._renderSetRow(exIdx, si, s)).join('')}
+          </div>
+          <button class="btn btn-ghost" style="width:100%; margin-top:10px; height:38px; justify-content:center; border:1px dashed var(--border); font-size:12px;"
+            onclick="this.closest('active-session-view')._addSet(${exIdx})">
             <i class="ph-bold ph-plus-circle"></i> Agregar Serie
           </button>
         </div>
@@ -434,138 +517,201 @@ class ActiveSessionView extends HTMLElement {
 
   _renderSetRow(exIdx, setIdx, s) {
     const isDone = s.done;
+    const inputStyle = `height:42px; text-align:center; background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); font-weight:700; border-radius:8px; font-size:14px; width:100%;`;
     return `
-      <div class="set-row ${isDone ? 'done' : ''}" style="display:grid; grid-template-columns:35px 1fr 1fr 60px 44px 44px; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02);">
-        <span style="text-align:center; font-weight:800; color:var(--text-muted); font-size:12px;">${setIdx + 1}</span>
-        
-        <!-- Peso -->
-        <div style="position:relative;">
-          <input type="number" inputmode="decimal" value="${s.weight}" class="form-input input-numeric" 
-            style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" 
-            onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)" 
-            onkeydown="if(event.key==='Enter') this.blur()"
-            ${isDone ? 'disabled' : ''}>
-          <span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:8px; font-weight:800; color:var(--text-muted); pointer-events:none;">${unitLabel()}</span>
-        </div>
-
-        <!-- Reps -->
-        <div style="position:relative;">
-          <input type="number" inputmode="decimal" value="${s.reps}" class="form-input input-numeric" 
-            style="height:40px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:#FFF; font-weight:700; border-radius:8px;" 
-            onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'reps',this.value)" 
-            onkeydown="if(event.key==='Enter') this.blur()"
-            ${isDone ? 'disabled' : ''}>
-          <span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:8px; font-weight:800; color:var(--text-muted); pointer-events:none;">REPS</span>
-        </div>
-
-        <!-- RPE (Fase 4) -->
-        <div style="position:relative;">
-          <select class="form-select" style="height:40px; font-size:11px; padding:0 4px; text-align:center; background:#0B0E14; border:1px solid #1F2937; color:var(--accent-light); font-weight:800; border-radius:8px;" 
-            onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'rpe',this.value)"
-            ${isDone ? 'disabled' : ''}>
-            <option value="">RPE</option>
-            ${[10, 9.5, 9, 8.5, 8, 7, 6].map(v => `<option value="${v}" ${s.rpe == v ? 'selected' : ''}>${v}</option>`).join('')}
-          </select>
-        </div>
-
-        <!-- Check -->
-        <button class="check-btn" style="width:40px; height:40px; border-radius:10px; background:${isDone ? 'var(--success)' : 'rgba(255,255,255,0.05)'}; border:1px solid ${isDone ? 'var(--success)' : 'rgba(255,255,255,0.1)'}; color:${isDone ? '#000' : 'var(--text-muted)'};" 
+      <div class="set-row ${isDone ? 'done' : ''}" style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
+        <span style="text-align:center; font-weight:800; color:${isDone ? 'var(--success)' : 'var(--text-muted)'}; font-size:13px;">${setIdx + 1}</span>
+        <input type="number" inputmode="decimal" value="${s.weight}" class="form-input input-numeric"
+          style="${inputStyle} ${isDone ? 'opacity:0.5;' : ''}"
+          onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)"
+          onkeydown="if(event.key==='Enter') this.blur()"
+          ${isDone ? 'disabled' : ''}>
+        <input type="number" inputmode="decimal" value="${s.reps}" class="form-input input-numeric"
+          style="${inputStyle} ${isDone ? 'opacity:0.5;' : ''}"
+          onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'reps',this.value)"
+          onkeydown="if(event.key==='Enter') this.blur()"
+          ${isDone ? 'disabled' : ''}>
+        <select class="form-select" style="height:42px; font-size:11px; padding:0 4px; text-align:center; background:var(--bg-card); border:1px solid var(--border); color:var(--accent-light); font-weight:800; border-radius:8px;"
+          onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'rpe',this.value)"
+          ${isDone ? 'disabled' : ''}>
+          <option value="">-</option>
+          ${[10,9.5,9,8.5,8,7,6].map(v => `<option value="${v}" ${s.rpe == v ? 'selected' : ''}>${v}</option>`).join('')}
+        </select>
+        <button class="check-btn" style="width:42px; height:42px; border-radius:10px; background:${isDone ? 'var(--success)' : 'rgba(128,128,128,0.08)'}; border:1px solid ${isDone ? 'var(--success)' : 'var(--border)'}; color:${isDone ? '#000' : 'var(--text-muted)'}; cursor:pointer; transition:all 0.2s; font-size:16px;"
           onclick="this.closest('active-session-view')._toggleSet(${exIdx},${setIdx})">
           <i class="ph-bold ${isDone ? 'ph-check' : 'ph-circle'}"></i>
         </button>
-
-        <!-- Borrar -->
-        <button class="btn btn-icon btn-danger" style="width:40px; height:40px; border-radius:10px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.1); visibility:${isDone ? 'hidden' : 'visible'};" 
+        <button style="width:42px; height:42px; border-radius:10px; background:transparent; border:1px solid transparent; color:var(--danger-light); cursor:pointer; opacity:0.5; visibility:${isDone ? 'hidden' : 'visible'};"
           onclick="this.closest('active-session-view')._delSet(${exIdx},${setIdx})">
-          <i class="ph-bold ph-trash-simple" style="font-size:15px;"></i>
+          <i class="ph-bold ph-trash-simple" style="font-size:14px;"></i>
         </button>
       </div>
     `;
   }
 
-  _moveEx(idx, dir) {
-    const nIdx = idx + dir;
-    if (nIdx < 0 || nIdx >= this._logs.length) return;
-    [this._logs[idx], this._logs[nIdx]] = [this._logs[nIdx], this._logs[idx]];
-    this._saveState();
+  _goToEx(idx) {
+    if (idx < 0 || idx >= this._logs.length) return;
+    this._currentExIdx = idx;
     this._renderActive();
-    this._startTimer('session-timer');
   }
 
   _updVal(ei, si, f, v) {
-    const val = parseFloat(v) || 0;
+    const val = f === 'rpe' ? (parseFloat(v) || '') : (parseFloat(v) || 0);
     this._logs[ei].sets[si][f] = val;
-
-    // Si es la primera serie, propagar a todas las siguientes no completadas
-    if (si === 0) {
+    if (si === 0 && f !== 'rpe') {
       this._logs[ei].sets.forEach((set, idx) => {
-        if (idx > 0 && !set.done) {
-          set[f] = val;
-        }
+        if (idx > 0 && !set.done) set[f] = val;
       });
-      // Re-renderizar para reflejar los nuevos valores en el DOM
-      const grid = this.querySelector('#active-tracker-list');
-      if (grid) {
-        const card = grid.querySelectorAll('.glass-card')[ei];
-        if (card) {
-          const setsContainer = card.querySelector(`#ex-${ei}-sets`);
-          if (setsContainer) {
-            setsContainer.innerHTML = this._logs[ei].sets
-              .map((s, sIdx) => this._renderSetRow(ei, sIdx, s))
-              .join('');
-          }
-        }
-      }
     }
-
     this._saveState();
+    // Re-render solo los sets sin refrescar toda la vista
+    const container = this.querySelector(`#ex-${ei}-sets`);
+    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
   }
 
   _toggleSet(ei, si) {
+    const wasAllDone = this._logs[ei].sets.every(s => s.done);
     this._logs[ei].sets[si].done = !this._logs[ei].sets[si].done;
+    const nowAllDone = this._logs[ei].sets.every(s => s.done) && this._logs[ei].sets.length > 0;
+
     this._saveState();
-    this._renderActive();
-    this._startTimer('session-timer');
+
+    // Si se acaba de completar el ultimo set, iniciar descanso y auto-avanzar
+    if (!wasAllDone && nowAllDone) {
+      this._startRestTimer(90); // 90s por defecto
+      // Mostrar notificacion visual
+      this._renderActive();
+      setTimeout(() => {
+        if (this._currentExIdx < this._logs.length - 1) {
+          // Solo avanzar si el usuario no ha cambiado ya
+          if (this._logs[this._currentExIdx].sets.every(s => s.done)) {
+            this._goToEx(this._currentExIdx + 1);
+          }
+        }
+      }, 2500);
+    } else {
+      // Re-render parcial: solo la flashcard y la barra de progreso
+      const setsContainer = this.querySelector(`#ex-${ei}-sets`);
+      if (setsContainer) setsContainer.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
+      this._updateProgressBar();
+    }
+  }
+
+  _updateProgressBar() {
+    const totalSets = this._logs.reduce((a, l) => a + l.sets.length, 0);
+    const doneSets  = this._logs.reduce((a, l) => a + l.sets.filter(s => s.done).length, 0);
+    const pct = totalSets ? Math.round(doneSets / totalSets * 100) : 0;
+    const bar = this.querySelector('[style*="background:var(--success)"][style*="border-radius:99px"]');
+    if (bar) bar.style.width = pct + '%';
+    const pctLabel = this.querySelector('[style*="color:var(--success)"][style*="font-size:10px; font-weight:800"]');
+    if (pctLabel) pctLabel.textContent = pct + '%';
   }
 
   _addSet(ei) {
     const last = this._logs[ei].sets.slice(-1)[0];
     this._logs[ei].sets.push({ weight: last ? last.weight : 0, reps: last ? last.reps : 10, done: false });
     this._saveState();
-    this._renderActive();
-    this._startTimer('session-timer');
+    const container = this.querySelector(`#ex-${ei}-sets`);
+    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
   }
 
   _delSet(ei, si) {
     this._logs[ei].sets.splice(si, 1);
     this._saveState();
-    this._renderActive();
-    this._startTimer('session-timer');
+    const container = this.querySelector(`#ex-${ei}-sets`);
+    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
   }
 
-  _updateProgress() {
-    const total = this._logs.reduce((a, l) => a + l.sets.length, 0);
-    const done  = this._logs.reduce((a, l) => a + l.sets.filter(s => s.done).length, 0);
-    const el = this.querySelector('#session-progress');
-    if (el) el.textContent = `${done} / ${total} series completadas`;
-  }
+  // ── TIMERS ──────────────────────────────────────────────
 
-  _startTimer(elId) {
+  _startSessionTimer() {
     if (this._timerInterval) clearInterval(this._timerInterval);
     this._timerInterval = setInterval(() => {
-      const el = this.querySelector('#' + elId);
+      const el = this.querySelector('#session-timer');
       if (el) el.textContent = formatDuration(Date.now() - this._startTime);
     }, 1000);
   }
 
-  async _finish() {
+  _startTimer(elId) {
+    this._startSessionTimer();
+  }
+
+  _startRestTimer(seconds = 90) {
+    this._restEndTime = Date.now() + seconds * 1000;
+    this._resumeRestTimer();
+  }
+
+  _resumeRestTimer() {
+    if (this._restInterval) clearInterval(this._restInterval);
+    const wrap = this.querySelector('#rest-timer-wrap');
+    const el   = this.querySelector('#rest-timer');
+    if (wrap) wrap.style.display = 'block';
+
+    this._restInterval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((this._restEndTime - Date.now()) / 1000));
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const el2 = this.querySelector('#rest-timer');
+      if (el2) el2.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      if (remaining <= 0) {
+        clearInterval(this._restInterval);
+        this._restEndTime = null;
+        const w = this.querySelector('#rest-timer-wrap');
+        if (w) {
+          w.style.background = 'var(--success)';
+          w.querySelector('div').textContent = '¡Listo!';
+          setTimeout(() => { if (w) w.style.display = 'none'; }, 1500);
+        }
+      }
+    }, 500);
+  }
+
+  _cancelRestTimer() {
+    if (this._restInterval) clearInterval(this._restInterval);
+    this._restEndTime = null;
+    const wrap = this.querySelector('#rest-timer-wrap');
+    if (wrap) wrap.style.display = 'none';
+  }
+
+  _cancelSession() {
+    this._clearState();
+    if (this._timerInterval) clearInterval(this._timerInterval);
+    if (this._restInterval)  clearInterval(this._restInterval);
+    window.location.hash = '#dashboard';
+  }
+
+  _finishFlow() {
+    // Mostrar modal de confirmacion con diario post-entrenamiento
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;display:flex;align-items:flex-end;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:var(--bg-panel);border-radius:24px 24px 0 0;padding:28px 24px;width:100%;max-width:600px;max-height:80vh;overflow-y:auto;">
+        <h3 style="font-size:20px;font-weight:900;color:var(--text-primary);margin-bottom:6px;">¿Finalizar Sesion? 🏁</h3>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Deja una nota sobre como te sentiste (opcional)</p>
+        <textarea id="post-journal" class="form-textarea" placeholder="Buena sesion, mucho energia, pero el hombro un poco cargado..." style="background:var(--bg-card);color:var(--text-primary);min-height:90px;width:100%;border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;"></textarea>
+        <div style="display:flex;gap:12px;margin-top:16px;">
+          <button id="cancel-finish" class="btn btn-ghost" style="flex:1;justify-content:center;">Seguir</button>
+          <button id="confirm-finish" class="btn btn-success" style="flex:2;justify-content:center;padding:16px;font-size:15px;font-weight:800;"><i class="ph-bold ph-flag-checkered"></i> GUARDAR SESION</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#cancel-finish').onclick = () => overlay.remove();
+    overlay.querySelector('#confirm-finish').onclick = () => {
+      const journal = overlay.querySelector('#post-journal').value.trim();
+      overlay.remove();
+      this._finish(journal);
+    };
+  }
+
+  async _finish(journal = '') {
     const dur = Date.now() - this._startTime;
     const finalLogs = this._logs
       .map(l => ({ exerciseId: l.exerciseId, sets: l.sets.filter(s => s.done) }))
       .filter(l => l.sets.length > 0);
 
     if (!finalLogs.length) {
-      alert('Marca al menos una serie como completada (boton de check) antes de finalizar.');
+      alert('Marca al menos una serie como completada antes de finalizar.');
       return;
     }
 
@@ -574,10 +720,12 @@ class ActiveSessionView extends HTMLElement {
         type:      'routine',
         routineId: this._selectedRoutine.id,
         duration:  dur,
-        logs:      finalLogs
+        logs:      finalLogs,
+        journal
       });
       this._clearState();
       if (this._timerInterval) clearInterval(this._timerInterval);
+      if (this._restInterval)  clearInterval(this._restInterval);
       window.location.hash = '#sessions';
     } catch (err) {
       console.error('Error al guardar sesion:', err);
