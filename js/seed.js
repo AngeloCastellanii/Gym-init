@@ -607,24 +607,199 @@ const SEED_ROUTINES = [
 ];
 
 /**
+ * ─────────────────────────────────────────────────────────────
+ *  PROGRAMA SEMANAL DEL USUARIO — GYM (5 días)
+ *  Lunes: Femoral + Glúteos
+ *  Martes: Espalda + Tríceps + Abs
+ *  Miércoles: Quads
+ *  Jueves: Hombros + Bíceps + Abs
+ *  Viernes: Glúteos
+ * ─────────────────────────────────────────────────────────────
+ */
+
+// Ejercicios específicos del programa semanal del usuario
+// (con IDs 'ex_s_XX' para no colisionar con el seed base)
+const SEED_WEEKLY_EXERCISES = [
+  // ── Femoral / Glúteos ──────────────────────────────────
+  { id: 'ex_s_01', name: 'Zumo (Máquina Femoral)',           muscleGroup: 'Isquiotibiales (Femorales)', equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_02', name: 'Leg Curl Acostado',                muscleGroup: 'Isquiotibiales (Femorales)', equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_03', name: 'Hip Thrust',                       muscleGroup: 'Glúteos',                    equipment: 'Barra',         difficulty: 'Intermedio'  },
+  { id: 'ex_s_04', name: 'Peso Muerto con Barra',            muscleGroup: 'Isquiotibiales (Femorales)', equipment: 'Barra',         difficulty: 'Intermedio'  },
+  { id: 'ex_s_05', name: 'Extensiones de Cadera',            muscleGroup: 'Glúteos',                    equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_06', name: 'Abducciones',                      muscleGroup: 'Glúteos',                    equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_07', name: 'Pantorrillas (Gemelos)',            muscleGroup: 'Pantorrillas (Gemelos)',      equipment: 'Máquina',       difficulty: 'Principiante' },
+  // ── Espalda / Tríceps ──────────────────────────────────
+  { id: 'ex_s_08', name: 'Jalón al Pecho',                   muscleGroup: 'Dorsales',                   equipment: 'Polea',         difficulty: 'Principiante' },
+  { id: 'ex_s_09', name: 'Extensión de Tríceps (Copa)',       muscleGroup: 'Tríceps',                    equipment: 'Mancuerna',     difficulty: 'Principiante' },
+  { id: 'ex_s_10', name: 'Remo en Máquina',                  muscleGroup: 'Dorsales',                   equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_11', name: 'Copa (Tríceps con Mancuerna)',      muscleGroup: 'Tríceps',                    equipment: 'Mancuerna',     difficulty: 'Principiante' },
+  { id: 'ex_s_12', name: 'Pull Over',                        muscleGroup: 'Dorsales',                   equipment: 'Mancuerna',     difficulty: 'Intermedio'  },
+  { id: 'ex_s_13', name: 'Fondos en Paralelas',              muscleGroup: 'Tríceps',                    equipment: 'Sin equipo',    difficulty: 'Intermedio'  },
+  { id: 'ex_s_14', name: 'Dominadas',                        muscleGroup: 'Dorsales',                   equipment: 'Sin equipo',    difficulty: 'Avanzado'    },
+  { id: 'ex_s_15', name: 'Abs — Extensión de Piernas',       muscleGroup: 'Abdominales',                equipment: 'Sin equipo',    difficulty: 'Principiante' },
+  { id: 'ex_s_16', name: 'Abs — Giro Ruso',                  muscleGroup: 'Abdominales',                equipment: 'Sin equipo',    difficulty: 'Principiante' },
+  { id: 'ex_s_17', name: 'Abs — Crunch',                     muscleGroup: 'Abdominales',                equipment: 'Sin equipo',    difficulty: 'Principiante' },
+  // ── Cuádriceps ─────────────────────────────────────────
+  { id: 'ex_s_18', name: 'Búlgaras (Sentadilla Búlgara)',    muscleGroup: 'Cuádriceps',                 equipment: 'Mancuerna',     difficulty: 'Intermedio'  },
+  { id: 'ex_s_19', name: 'Prensa de Piernas',                muscleGroup: 'Cuádriceps',                 equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_20', name: 'Extensión de Cuádriceps',          muscleGroup: 'Cuádriceps',                 equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_21', name: 'Sentadilla con Barra',             muscleGroup: 'Cuádriceps',                 equipment: 'Barra',         difficulty: 'Intermedio'  },
+  { id: 'ex_s_22', name: 'Sissy Squat',                      muscleGroup: 'Cuádriceps',                 equipment: 'Sin equipo',    difficulty: 'Intermedio'  },
+  { id: 'ex_s_23', name: 'Adducciones',                      muscleGroup: 'Glúteos',                    equipment: 'Máquina',       difficulty: 'Principiante' },
+  // ── Hombros / Bíceps ───────────────────────────────────
+  { id: 'ex_s_24', name: 'Press Militar',                    muscleGroup: 'Deltoides (Hombros)',         equipment: 'Barra',         difficulty: 'Intermedio'  },
+  { id: 'ex_s_25', name: 'Curl de Bíceps con Mancuerna',    muscleGroup: 'Bíceps',                     equipment: 'Mancuerna',     difficulty: 'Principiante' },
+  { id: 'ex_s_26', name: 'Elevaciones Laterales',            muscleGroup: 'Deltoides (Hombros)',         equipment: 'Mancuerna',     difficulty: 'Principiante' },
+  { id: 'ex_s_27', name: 'Elevaciones Frontales',            muscleGroup: 'Deltoides (Hombros)',         equipment: 'Mancuerna',     difficulty: 'Principiante' },
+  { id: 'ex_s_28', name: 'Curl Martillo',                    muscleGroup: 'Bíceps',                     equipment: 'Mancuerna',     difficulty: 'Principiante' },
+  { id: 'ex_s_29', name: 'Face Pull',                        muscleGroup: 'Deltoides (Hombros)',         equipment: 'Polea',         difficulty: 'Principiante' },
+  { id: 'ex_s_30', name: 'Curl de Bíceps en Máquina',        muscleGroup: 'Bíceps',                     equipment: 'Máquina',       difficulty: 'Principiante' },
+  // ── Glúteos Viernes ────────────────────────────────────
+  { id: 'ex_s_31', name: 'Patada de Glúteo',                 muscleGroup: 'Glúteos',                    equipment: 'Máquina',       difficulty: 'Principiante' },
+  { id: 'ex_s_32', name: 'RDL Unilateral (Peso Muerto)',      muscleGroup: 'Isquiotibiales (Femorales)', equipment: 'Mancuerna',     difficulty: 'Intermedio'  },
+  { id: 'ex_s_33', name: 'Sentadilla con Mancuerna / Disco', muscleGroup: 'Glúteos',                    equipment: 'Mancuerna',     difficulty: 'Principiante' },
+];
+
+const SEED_WEEKLY_ROUTINES = [
+  // ──────────────────────────────────────────────────────
+  //  LUNES — Femoral + Glúteos (series x3)
+  // ──────────────────────────────────────────────────────
+  {
+    id: 'rt_s_lun',
+    name: 'Lunes — Femoral + Glúteos',
+    description: 'Zumo, Leg Curl, Hip Thrust, Peso Muerto con Barra, Extensiones de cadera, Abducciones, Pantorrillas.',
+    exercises: [
+      { exerciseId: 'ex_s_01', sets: 3, reps: 12 },
+      { exerciseId: 'ex_s_02', sets: 3, reps: 12 },
+      { exerciseId: 'ex_s_03', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_04', sets: 3, reps: 10 },
+      { exerciseId: 'ex_s_05', sets: 3, reps: 15 },
+      { exerciseId: 'ex_s_06', sets: 3, reps: 15 },
+      { exerciseId: 'ex_s_07', sets: 3, reps: 20 },
+    ]
+  },
+  // ──────────────────────────────────────────────────────
+  //  MARTES — Espalda + Tríceps + Abs (series x4)
+  // ──────────────────────────────────────────────────────
+  {
+    id: 'rt_s_mar',
+    name: 'Martes — Espalda + Tríceps + Abs',
+    description: 'Jalón al pecho, Remo, Pull Over, Dominadas. Tríceps: Copa, Extensión, Fondos. Abs x3.',
+    exercises: [
+      { exerciseId: 'ex_s_08', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_09', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_10', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_11', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_12', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_13', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_14', sets: 3, reps: 8  },
+      { exerciseId: 'ex_s_15', sets: 3, reps: 15 },
+      { exerciseId: 'ex_s_16', sets: 3, reps: 20 },
+      { exerciseId: 'ex_s_17', sets: 3, reps: 20 },
+    ]
+  },
+  // ──────────────────────────────────────────────────────
+  //  MIÉRCOLES — Quads (series x4)
+  // ──────────────────────────────────────────────────────
+  {
+    id: 'rt_s_mie',
+    name: 'Miércoles — Quads',
+    description: 'Búlgaras, Prensa + Extensión de cuádriceps, Sentadilla + Sissy. Adducciones y Pantorrillas x3.',
+    exercises: [
+      { exerciseId: 'ex_s_18', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_19', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_20', sets: 4, reps: 15 },
+      { exerciseId: 'ex_s_21', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_22', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_23', sets: 3, reps: 15 },
+      { exerciseId: 'ex_s_07', sets: 3, reps: 20 },
+    ]
+  },
+  // ──────────────────────────────────────────────────────
+  //  JUEVES — Hombros + Bíceps + Abs (series x4)
+  // ──────────────────────────────────────────────────────
+  {
+    id: 'rt_s_jue',
+    name: 'Jueves — Hombros + Bíceps + Abs',
+    description: 'Press Militar, Elevaciones laterales y frontales, Face Pull, Curl bíceps. Dominadas x3. Abs x3.',
+    exercises: [
+      { exerciseId: 'ex_s_24', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_25', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_26', sets: 4, reps: 15 },
+      { exerciseId: 'ex_s_27', sets: 4, reps: 15 },
+      { exerciseId: 'ex_s_28', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_29', sets: 4, reps: 15 },
+      { exerciseId: 'ex_s_30', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_14', sets: 3, reps: 8  },
+      { exerciseId: 'ex_s_15', sets: 3, reps: 15 },
+      { exerciseId: 'ex_s_16', sets: 3, reps: 20 },
+      { exerciseId: 'ex_s_17', sets: 3, reps: 20 },
+    ]
+  },
+  // ──────────────────────────────────────────────────────
+  //  VIERNES — Glúteos (series x4)
+  // ──────────────────────────────────────────────────────
+  {
+    id: 'rt_s_vie',
+    name: 'Viernes — Glúteos',
+    description: 'Hip Thrust, Patada de Glúteo + Extensiones de cadera, RDL Unilateral, Sentadilla con disco. Abducciones y Pantorrillas x3.',
+    exercises: [
+      { exerciseId: 'ex_s_03', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_31', sets: 4, reps: 15 },
+      { exerciseId: 'ex_s_05', sets: 4, reps: 15 },
+      { exerciseId: 'ex_s_32', sets: 4, reps: 10 },
+      { exerciseId: 'ex_s_33', sets: 4, reps: 12 },
+      { exerciseId: 'ex_s_06', sets: 3, reps: 15 },
+      { exerciseId: 'ex_s_07', sets: 3, reps: 20 },
+    ]
+  },
+];
+
+/**
  * Inserta los ejercicios y rutinas semilla si la base de datos está vacía.
  * Usa put() con IDs fijos para ser idempotente (se puede llamar siempre).
  */
 async function seedDatabase() {
   const existingExercises = await GymDB.exercises.getAll();
-  if (existingExercises.length > 0) return; // Ya hay datos, no reinsertamos
+  const existingIds = new Set(existingExercises.map(e => e.id));
 
-  console.log('Insertando datos semilla...');
-
-  // Insertar ejercicios
-  for (const ex of SEED_EXERCISES) {
-    await GymDB.exercises.add(ex);
+  // Insertar ejercicios base si no existen
+  if (existingExercises.length === 0) {
+    console.log('Insertando ejercicios semilla base...');
+    for (const ex of SEED_EXERCISES) {
+      await GymDB.exercises.add(ex);
+    }
+    console.log(`✅ Ejercicios base: ${SEED_EXERCISES.length} insertados.`);
   }
 
-  // Insertar rutinas
-  for (const rt of SEED_ROUTINES) {
-    await GymDB.routines.add(rt);
+  // Insertar ejercicios del programa semanal si no existen (idempotente por ID)
+  let insertedEx = 0;
+  for (const ex of SEED_WEEKLY_EXERCISES) {
+    if (!existingIds.has(ex.id)) {
+      await GymDB.exercises.add(ex);
+      insertedEx++;
+    }
+  }
+  if (insertedEx > 0) {
+    console.log(`✅ Ejercicios semanales: ${insertedEx} nuevos insertados.`);
   }
 
-  console.log(`✅ Seed completado: ${SEED_EXERCISES.length} ejercicios y ${SEED_ROUTINES.length} rutinas.`);
+  // Insertar rutinas (base + programa semanal) si no existen — idempotente por ID
+  const existingRoutines = await GymDB.routines.getAll();
+  const existingRoutineIds = new Set(existingRoutines.map(r => r.id));
+
+  const allSeedRoutines = [...SEED_ROUTINES, ...SEED_WEEKLY_ROUTINES];
+  let insertedRt = 0;
+  for (const rt of allSeedRoutines) {
+    if (!existingRoutineIds.has(rt.id)) {
+      await GymDB.routines.add(rt);
+      insertedRt++;
+    }
+  }
+
+  if (insertedRt > 0) {
+    console.log(`✅ Rutinas: ${insertedRt} nuevas insertadas.`);
+  } else {
+    console.log('Rutinas: ya existen, seed omitido.');
+  }
 }
