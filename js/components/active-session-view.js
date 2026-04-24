@@ -34,19 +34,10 @@ class ActiveSessionView extends HTMLElement {
     if (this._initialized) return;
     this._initialized = true;
 
-    // Intentar restaurar sesion activa guardada
+    // Restaurar sesion activa si existe en sessionStorage
     const saved = this._loadState();
     if (saved && saved.phase && saved.phase !== 'setup') {
       this._restoreFromState(saved);
-      return;
-    }
-
-    // Verificar si viene desde rutinas con una rutina pre-seleccionada
-    const pendingRoutineId = localStorage.getItem('pending-routine');
-    if (pendingRoutineId) {
-      localStorage.removeItem('pending-routine');
-      this._renderSetup();
-      this._autoStartRoutine(pendingRoutineId);
     } else {
       this._renderSetup();
     }
@@ -95,15 +86,18 @@ class ActiveSessionView extends HTMLElement {
     this._freeSessionName = state.freeSessionName || '';
     this._freeNotes       = state.freeNotes || '';
 
-    if (state.phase === 'active-routine' && state.selectedRoutineId) {
-      try {
-        this._selectedRoutine = await GymDB.routines.getWithExercises(state.selectedRoutineId);
-      } catch { /* si falla, setup */ }
+    if (state.phase === 'active-routine') {
+      // Cargar rutina para display (nombre, etc.) — los logs ya vienen del estado
+      if (state.selectedRoutineId) {
+        try {
+          this._selectedRoutine = await GymDB.routines.get(state.selectedRoutineId);
+        } catch { /* no crítico */ }
+      }
       this._renderActive();
-      this._startTimer('session-timer');
+      this._startSessionTimer();
     } else if (state.phase === 'active-free') {
       this._renderFreeActive();
-      this._startTimer('free-timer');
+      this._startFreeTimer();
     } else {
       this._renderSetup();
     }

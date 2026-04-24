@@ -34,19 +34,6 @@ class RoutinesView extends HTMLElement {
     `;
 
     this.querySelector('#btn-add-routine').addEventListener('click', () => this._openModal(null));
-
-    this.querySelector('#routines-grid').addEventListener('click', (e) => {
-      const editBtn   = e.target.closest('[data-edit]');
-      const deleteBtn = e.target.closest('[data-delete]');
-      const startBtn  = e.target.closest('[data-start]');
-
-      if (editBtn)   this._openModal(this._routines.find(r => r.id === editBtn.dataset.edit));
-      if (deleteBtn) this._deleteRoutine(deleteBtn.dataset.delete);
-      if (startBtn) {
-        localStorage.setItem('pending-routine', startBtn.dataset.start);
-        window.location.hash = '#session/new';
-      }
-    });
   }
 
   async loadData() {
@@ -83,53 +70,76 @@ class RoutinesView extends HTMLElement {
     // Listeners de acciones (Fase 1 Roadmap)
     grid.querySelectorAll('[data-start]').forEach(btn => {
       btn.onclick = async (e) => {
-        e.preventDefault(); // Evitar comportamientos extraños
+        e.preventDefault();
         const rid = e.currentTarget.dataset.start;
         const routine = this._routines.find(r => r.id === rid);
         if (!routine) return;
 
-        // Limpiar sesión previa por seguridad
+        // Limpiar cualquier sesion previa
         sessionStorage.removeItem('gym-active-session');
 
-        // Cargar info de ejercicios completa para la sesión
+        // Cargar historial de pesos para sugerir pesos previos
+        let lastWeights = {};
+        try {
+          const sessions = await GymDB.sessions.getAll();
+          sessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+          for (const sess of sessions) {
+            if (!sess.logs) continue;
+            for (const log of sess.logs) {
+              if (lastWeights[log.exerciseId]) continue;
+              const done = (log.sets || []).filter(s => s.done !== false);
+              if (done.length > 0) {
+                const last = done[done.length - 1];
+                lastWeights[log.exerciseId] = { weight: last.weight, reps: last.reps };
+              }
+            }
+          }
+        } catch (err) { console.warn('No se pudo cargar historial:', err); }
+
+        // Construir logs con pesos sugeridos
         const logs = (routine.exercises || []).map(re => {
           const exInfo = this._exercises.find(x => x.id === re.exerciseId);
+          const lastData = lastWeights[re.exerciseId];
           return {
-            exerciseId: re.exerciseId,
-            exerciseName: exInfo ? exInfo.name : 'Ejercicio',
-            muscleGroup: exInfo ? exInfo.muscleGroup : 'Varios',
-            sets: Array.from({ length: re.sets || 3 }, () => ({ 
-              weight: 0, 
-              reps: re.reps || 10, 
-              done: false 
+            exerciseId:    re.exerciseId,
+            exerciseName:  exInfo ? exInfo.name : 'Ejercicio',
+            muscleGroup:   exInfo ? exInfo.muscleGroup : 'Varios',
+            exerciseImage: exInfo ? (exInfo.image || '') : '',
+            lastData,
+            sets: Array.from({ length: re.sets || 3 }, () => ({
+              weight: lastData ? lastData.weight : 0,
+              reps:   lastData ? lastData.reps   : (re.reps || 10),
+              done:   false
             }))
           };
         });
 
-        const sessionData = {
-          type: 'routine',
-          routineId: rid,
-          name: routine.name,
-          startTime: Date.now(),
-          logs: logs
+        // Guardar estado con el formato que espera active-session-view
+        const sessionState = {
+          phase:             'active-routine',
+          mode:              'routine',
+          startTime:         Date.now(),
+          logs,
+          selectedRoutineId: rid,
+          freeSessionName:   '',
+          freeNotes:         ''
         };
 
         try {
-          sessionStorage.setItem('gym-active-session', JSON.stringify(sessionData));
-          // Navegación forzada para evitar conflictos con el router
-          window.location.hash = '#train/active';
+          sessionStorage.setItem('gym-active-session', JSON.stringify(sessionState));
+          window.location.hash = '#session/new';
         } catch (err) {
-          console.error('Error al iniciar rutina directa:', err);
+          console.error('Error al iniciar rutina:', err);
         }
       };
     });
 
     grid.querySelectorAll('[data-edit]').forEach(btn => {
-      btn.onclick = (e) => this._openEdit(e.currentTarget.dataset.edit);
+      btn.onclick = (e) => this._openModal(this._routines.find(r => r.id === e.currentTarget.dataset.edit));
     });
 
     grid.querySelectorAll('[data-delete]').forEach(btn => {
-      btn.onclick = (e) => this._delete(e.currentTarget.dataset.delete);
+      btn.onclick = (e) => this._deleteRoutine(e.currentTarget.dataset.delete);
     });
 
     // Listener para cambiar portada (Fase 1.2)
