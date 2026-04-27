@@ -12,6 +12,7 @@ class RoutineModal extends HTMLElement {
     this._onSave = null;
     this._allExercises = [];
     this._selected = [];
+    this._activeFilter = ''; // Categoria de músculo activa
   }
 
   connectedCallback() {
@@ -33,14 +34,26 @@ class RoutineModal extends HTMLElement {
             
             <div class="form-group">
               <label class="form-label">Ejercicios disponibles</label>
-              <div class="search-bar" style="margin-bottom:12px; background: #1E293B; border-radius:10px;">
-                <i class="ph ph-magnifying-glass" style="padding-left:14px; color:var(--text-secondary);"></i>
-                <input type="text" placeholder="Buscar ejercicio..." id="rt-exercise-search" style="color: #FFFFFF;">
+              
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div class="search-bar" style="background: #1E293B; border-radius:10px;">
+                  <i class="ph ph-magnifying-glass" style="padding-left:14px; color:var(--text-secondary);"></i>
+                  <input type="text" placeholder="Buscar ejercicio..." id="rt-exercise-search" style="color: #FFFFFF;">
+                </div>
+                
+                <!-- Filtros por categoria corporal -->
+                <div style="display:flex; gap:6px; flex-wrap:wrap;" id="rt-filter-tabs">
+                  <button class="filter-btn active" style="padding:4px 10px; font-size:11px;" data-category="">Todos</button>
+                  ${Object.keys(MUSCLE_CATEGORIES).map(cat => `
+                    <button class="filter-btn" style="padding:4px 10px; font-size:11px;" data-category="${cat}">${cat}</button>
+                  `).join('')}
+                </div>
               </div>
-              <div class="picker-list" id="rt-exercise-list" style="max-height:150px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:8px; padding:6px;"></div>
+
+              <div class="picker-list" id="rt-exercise-list" style="max-height:180px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:8px; padding:8px 4px; margin-top:8px;"></div>
             </div>
 
-            <div class="form-group" id="rt-selected-group" style="display:none; margin-top:8px;">
+            <div class="form-group" id="rt-selected-group" style="display:none; margin-top:16px;">
               <label class="form-label" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
                 <span style="display:flex; align-items:center; gap:8px;"><i class="ph-bold ph-list-numbers" style="color:var(--accent-light);"></i> Plan de Entrenamiento</span>
                 <span id="rt-selected-count" class="badge badge-slate" style="font-size:10px;"></span>
@@ -63,6 +76,16 @@ class RoutineModal extends HTMLElement {
     });
     this.querySelector('#rt-save').addEventListener('click', () => this._save());
     this.querySelector('#rt-exercise-search').addEventListener('input', () => this._renderExercisePicker());
+    
+    // Filtros de categoria (delegacion de eventos)
+    this.querySelector('#rt-filter-tabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-category]');
+      if (!btn) return;
+      this.querySelectorAll('#rt-filter-tabs [data-category]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      this._activeFilter = btn.dataset.category;
+      this._renderExercisePicker();
+    });
   }
 
   async open(routine = null, onSave = null) {
@@ -85,14 +108,35 @@ class RoutineModal extends HTMLElement {
   }
 
   _renderExercisePicker() {
-    const search = this.querySelector('#rt-exercise-search').value.toLowerCase();
+    const searchInput = this.querySelector('#rt-exercise-search');
+    const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const list = this.querySelector('#rt-exercise-list');
-    const filtered = this._allExercises.filter(ex => ex.name.toLowerCase().includes(search));
+    
+    // Filtro por categorias musculares
+    const allowedMuscles = this._activeFilter ? (MUSCLE_CATEGORIES[this._activeFilter] || []) : null;
+
+    let filtered = this._allExercises;
+
+    if (allowedMuscles) {
+      filtered = filtered.filter(ex => allowedMuscles.includes(ex.muscleGroup));
+    }
+
+    if (search) {
+      filtered = filtered.filter(ex => 
+        ex.name.toLowerCase().includes(search) || 
+        ex.muscleGroup.toLowerCase().includes(search)
+      );
+    }
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<p style="font-size:12px; color:var(--text-muted); width:100%; text-align:center; padding:10px;">No se encontraron ejercicios en esta categoría.</p>`;
+      return;
+    }
 
     list.innerHTML = filtered.map(ex => {
       const isChecked = this._selected.some(s => s.exerciseId === ex.id);
       return `
-        <label class="badge ${isChecked ? 'badge-blue' : 'badge-slate'}" style="cursor:pointer; padding:8px 14px; font-size:11px; transition:all 0.2s; border-width:2px;">
+        <label class="badge ${isChecked ? 'badge-blue' : 'badge-slate'}" style="cursor:pointer; padding:8px 14px; font-size:11px; transition:all 0.2s; border-width:2px; flex: 1 1 calc(50% - 8px); min-width: 140px; text-align: center;">
           <input type="checkbox" style="display:none;" onchange="this.closest('routine-modal')._toggleExercise('${ex.id}', this.checked)" ${isChecked ? 'checked' : ''}>
           ${ex.name}
         </label>
