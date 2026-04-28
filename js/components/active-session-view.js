@@ -630,28 +630,77 @@ class ActiveSessionView extends HTMLElement {
           </div>
         </div>
 
-        <!-- Sets -->
-        <div style="padding:0 24px 12px;">
-          <!-- Cabecera columnas -->
-          <div style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; padding:10px 0 6px; border-bottom:1px solid var(--border);">
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">#</span>
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">${isDeporte ? 'TIEMPO' : 'PESO'}</span>
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">${isDeporte ? 'ROUNDS' : 'REPS'}</span>
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">RPE</span>
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">✓</span>
-            <span></span>
-          </div>
-          <div id="ex-${exIdx}-sets">
-            ${log.sets.map((s, si) => this._renderSetRow(exIdx, si, s)).join('')}
-          </div>
-          <button class="btn btn-ghost" style="width:100%; margin-top:10px; height:38px; justify-content:center; border:1px dashed var(--border); font-size:12px;"
-            onclick="this.closest('active-session-view')._addSet(${exIdx})">
-            <i class="ph-bold ph-plus-circle"></i> Agregar Serie
-          </button>
+        <!-- Sets Container -->
+        <div id="ex-${exIdx}-sets-container" style="padding:0 24px 12px;">
+          ${this._renderSetsContainer(exIdx)}
         </div>
       </div>
     `;
   }
+
+  _renderSetsContainer(exIdx) {
+    const log = this._logs[exIdx];
+    const isDeporte = log.muscleGroup === 'Cardio / Deportes';
+    
+    if (isDeporte) {
+      if (log.sets.length > 1) {
+        log.sets = [log.sets[0]];
+      }
+      const s = log.sets[0];
+      return `
+         <div style="background:var(--bg-card); border:1px solid ${s.done ? 'var(--success)' : 'var(--border)'}; border-radius:12px; padding:20px; text-align:center; margin-top:10px; transition:border 0.2s;">
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">${s.done ? '¡Actividad Registrada!' : 'Registra tu actividad total'}</p>
+            <div style="display:flex; gap:12px; justify-content:center; margin-bottom:20px;">
+              <div style="flex:1;">
+                <label style="display:block; font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Tiempo Total (Min)</label>
+                <input type="number" inputmode="decimal" value="${s.weight || ''}" class="form-input" ${s.done ? 'disabled' : ''}
+                  style="height:48px; text-align:center; font-size:18px; font-weight:900; background:var(--bg-panel); width:100%; border:1px solid var(--border); border-radius:8px; color:var(--text-primary);"
+                  onchange="this.closest('active-session-view')._updVal(${exIdx}, 0, 'weight', this.value)">
+              </div>
+              <div style="flex:1;">
+                <label style="display:block; font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Rounds / Asaltos</label>
+                <input type="number" inputmode="decimal" value="${s.reps || 1}" class="form-input" ${s.done ? 'disabled' : ''}
+                  style="height:48px; text-align:center; font-size:18px; font-weight:900; background:var(--bg-panel); width:100%; border:1px solid var(--border); border-radius:8px; color:var(--text-primary);"
+                  onchange="this.closest('active-session-view')._updVal(${exIdx}, 0, 'reps', this.value)">
+              </div>
+              <div style="flex:1;">
+                <label style="display:block; font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Intensidad (RPE)</label>
+                <select class="form-select" ${s.done ? 'disabled' : ''}
+                  style="height:48px; text-align:center; font-size:16px; font-weight:900; background:var(--bg-panel); width:100%; color:var(--accent-light); border:1px solid var(--border); border-radius:8px; padding:0;"
+                  onchange="this.closest('active-session-view')._updVal(${exIdx}, 0, 'rpe', this.value)">
+                  <option value="">-</option>
+                  ${[10,9.5,9,8.5,8,7,6,5,4].map(v => `<option value="${v}" ${s.rpe == v ? 'selected' : ''}>${v}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <button class="btn ${s.done ? 'btn-success' : 'btn-primary'}" style="width:100%; justify-content:center; height:48px; font-size:14px; font-weight:800;"
+              onclick="this.closest('active-session-view')._toggleSet(${exIdx}, 0)">
+              <i class="ph-bold ${s.done ? 'ph-check' : 'ph-flag'}"></i> 
+              ${s.done ? 'ACTIVIDAD COMPLETADA' : 'MARCAR COMO COMPLETADO'}
+            </button>
+         </div>
+      `;
+    }
+
+    return `
+      <div style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; padding:10px 0 6px; border-bottom:1px solid var(--border);">
+        <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">#</span>
+        <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">PESO</span>
+        <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">REPS</span>
+        <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">RPE</span>
+        <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">✓</span>
+        <span></span>
+      </div>
+      <div>
+        ${log.sets.map((s, si) => this._renderSetRow(exIdx, si, s)).join('')}
+      </div>
+      <button class="btn btn-ghost" style="width:100%; margin-top:10px; height:38px; justify-content:center; border:1px dashed var(--border); font-size:12px;"
+        onclick="this.closest('active-session-view')._addSet(${exIdx})">
+        <i class="ph-bold ph-plus-circle"></i> Agregar Serie
+      </button>
+    `;
+  }
+
 
   _renderSetRow(exIdx, setIdx, s) {
     const isDone = s.done;
@@ -659,18 +708,12 @@ class ActiveSessionView extends HTMLElement {
     const currentSetUnit = s.unit || (typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg');
     const inputStyle = `height:42px; text-align:center; background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); font-weight:700; border-radius:8px; font-size:14px; width:100%;`;
     
-    // El botón de unidad o etiqueta
-    let unitButtonHtml = '';
-    if (isDeporte) {
-      unitButtonHtml = `<span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); color:var(--text-secondary); font-size:9px; font-weight:800; text-transform:uppercase;">MIN</span>`;
-    } else {
-      unitButtonHtml = `<button class="unit-toggle-btn" 
-          onclick="this.closest('active-session-view')._toggleUnit(${exIdx},${setIdx})" 
-          ${isDone ? 'disabled' : ''}
-          style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:var(--bg-panel); border:1px solid var(--border); color:var(--text-secondary); font-size:9px; font-weight:800; padding:2px 4px; border-radius:4px; cursor:pointer; text-transform:uppercase; transition:all 0.2s;">
-          ${currentSetUnit}
-        </button>`;
-    }
+    let unitButtonHtml = `<button class="unit-toggle-btn" 
+        onclick="this.closest('active-session-view')._toggleUnit(${exIdx},${setIdx})" 
+        ${isDone ? 'disabled' : ''}
+        style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:var(--bg-panel); border:1px solid var(--border); color:var(--text-secondary); font-size:9px; font-weight:800; padding:2px 4px; border-radius:4px; cursor:pointer; text-transform:uppercase; transition:all 0.2s;">
+        ${currentSetUnit}
+      </button>`;
 
     return `
       <div class="set-row ${isDone ? 'done' : ''}" style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
@@ -724,8 +767,8 @@ class ActiveSessionView extends HTMLElement {
     }
     this._saveState();
     // Re-render solo los sets sin refrescar toda la vista
-    const container = this.querySelector(`#ex-${ei}-sets`);
-    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
+    const container = this.querySelector(`#ex-${ei}-sets-container`);
+    if (container) container.innerHTML = this._renderSetsContainer(ei);
   }
 
   _toggleSet(ei, si) {
@@ -750,8 +793,8 @@ class ActiveSessionView extends HTMLElement {
       }, 2500);
     } else {
       // Re-render parcial: solo la flashcard y la barra de progreso
-      const setsContainer = this.querySelector(`#ex-${ei}-sets`);
-      if (setsContainer) setsContainer.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
+      const container = this.querySelector(`#ex-${ei}-sets-container`);
+      if (container) container.innerHTML = this._renderSetsContainer(ei);
       this._updateProgressBar();
     }
   }
@@ -775,23 +818,23 @@ class ActiveSessionView extends HTMLElement {
       done:   false 
     });
     this._saveState();
-    const container = this.querySelector(`#ex-${ei}-sets`);
-    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
+    const container = this.querySelector(`#ex-${ei}-sets-container`);
+    if (container) container.innerHTML = this._renderSetsContainer(ei);
   }
 
   _delSet(ei, si) {
     this._logs[ei].sets.splice(si, 1);
     this._saveState();
-    const container = this.querySelector(`#ex-${ei}-sets`);
-    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
+    const container = this.querySelector(`#ex-${ei}-sets-container`);
+    if (container) container.innerHTML = this._renderSetsContainer(ei);
   }
 
   _toggleUnit(ei, si) {
     const current = this._logs[ei].sets[si].unit || (typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg');
     this._logs[ei].sets[si].unit = current === 'kg' ? 'lb' : 'kg';
     this._saveState();
-    const container = this.querySelector(`#ex-${ei}-sets`);
-    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
+    const container = this.querySelector(`#ex-${ei}-sets-container`);
+    if (container) container.innerHTML = this._renderSetsContainer(ei);
   }
 
   // ── TIMERS ──────────────────────────────────────────────
