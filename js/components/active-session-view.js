@@ -585,12 +585,13 @@ class ActiveSessionView extends HTMLElement {
   }
 
   _renderFlashcard(log, exIdx) {
+    const isDeporte = log.muscleGroup === 'Cardio / Deportes';
     const lastHint = log.lastData
-      ? `<span style="font-size:12px; color:var(--accent-light); font-weight:600;"><i class="ph-bold ph-clock-counter-clockwise" style="font-size:10px;"></i> Ultima vez: ${log.lastData.weight} ${unitLabel()} × ${log.lastData.reps} reps</span>`
+      ? `<span style="font-size:12px; color:var(--accent-light); font-weight:600;"><i class="ph-bold ph-clock-counter-clockwise" style="font-size:10px;"></i> Ultima vez: ${log.lastData.weight} ${isDeporte ? 'min' : unitLabel()} × ${log.lastData.reps} ${isDeporte ? 'rounds' : 'reps'}</span>`
       : `<span style="font-size:12px; color:var(--text-muted);">Sin historial aun</span>`;
 
     let overloadBadge = '';
-    if (log.lastData && log.lastData.weight > 0) {
+    if (log.lastData && log.lastData.weight > 0 && !isDeporte) {
       const sug = Math.ceil(log.lastData.weight * 1.025 * 2) / 2;
       overloadBadge = `
         <div style="display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:var(--accent)18; border:1px dashed var(--accent-light)55; border-radius:20px;">
@@ -634,8 +635,8 @@ class ActiveSessionView extends HTMLElement {
           <!-- Cabecera columnas -->
           <div style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; padding:10px 0 6px; border-bottom:1px solid var(--border);">
             <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">#</span>
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">PESO</span>
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">REPS</span>
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">${isDeporte ? 'TIEMPO' : 'PESO'}</span>
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">${isDeporte ? 'ROUNDS' : 'REPS'}</span>
             <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">RPE</span>
             <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">✓</span>
             <span></span>
@@ -654,8 +655,23 @@ class ActiveSessionView extends HTMLElement {
 
   _renderSetRow(exIdx, setIdx, s) {
     const isDone = s.done;
+    const isDeporte = this._logs[exIdx] && this._logs[exIdx].muscleGroup === 'Cardio / Deportes';
     const currentSetUnit = s.unit || (typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg');
     const inputStyle = `height:42px; text-align:center; background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); font-weight:700; border-radius:8px; font-size:14px; width:100%;`;
+    
+    // El botón de unidad o etiqueta
+    let unitButtonHtml = '';
+    if (isDeporte) {
+      unitButtonHtml = `<span style="position:absolute; right:6px; top:50%; transform:translateY(-50%); color:var(--text-secondary); font-size:9px; font-weight:800; text-transform:uppercase;">MIN</span>`;
+    } else {
+      unitButtonHtml = `<button class="unit-toggle-btn" 
+          onclick="this.closest('active-session-view')._toggleUnit(${exIdx},${setIdx})" 
+          ${isDone ? 'disabled' : ''}
+          style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:var(--bg-panel); border:1px solid var(--border); color:var(--text-secondary); font-size:9px; font-weight:800; padding:2px 4px; border-radius:4px; cursor:pointer; text-transform:uppercase; transition:all 0.2s;">
+          ${currentSetUnit}
+        </button>`;
+    }
+
     return `
       <div class="set-row ${isDone ? 'done' : ''}" style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
         <span style="text-align:center; font-weight:800; color:${isDone ? 'var(--success)' : 'var(--text-muted)'}; font-size:13px;">${setIdx + 1}</span>
@@ -666,12 +682,7 @@ class ActiveSessionView extends HTMLElement {
             onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)"
             onkeydown="if(event.key==='Enter') this.blur()"
             ${isDone ? 'disabled' : ''}>
-          <button class="unit-toggle-btn" 
-            onclick="this.closest('active-session-view')._toggleUnit(${exIdx},${setIdx})" 
-            ${isDone ? 'disabled' : ''}
-            style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:var(--bg-panel); border:1px solid var(--border); color:var(--text-secondary); font-size:9px; font-weight:800; padding:2px 4px; border-radius:4px; cursor:pointer; text-transform:uppercase; transition:all 0.2s;">
-            ${currentSetUnit}
-          </button>
+          ${unitButtonHtml}
         </div>
 
         <input type="number" inputmode="decimal" value="${s.reps}" class="form-input input-numeric"

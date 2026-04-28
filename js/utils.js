@@ -18,7 +18,8 @@ const DEFAULT_MUSCLES = [
   'Abdominales',
   'Lumbares',
   'Trapecios',
-  'Antebrazos'
+  'Antebrazos',
+  'Cardio / Deportes'
 ];
 
 function getCustomMuscles() {
@@ -54,7 +55,8 @@ const MUSCLE_CATEGORIES = {
   'Hombros':  ['Deltoides (Hombros)'],
   'Brazos':   ['B\u00edceps', 'Tr\u00edceps', 'Antebrazos'],
   'Pierna':   ['Cu\u00e1driceps', 'Isquiotibiales (Femorales)', 'Gl\u00fateos', 'Pantorrillas (Gemelos)'],
-  'Core':     ['Abdominales', 'Lumbares']
+  'Core':     ['Abdominales', 'Lumbares'],
+  'Combate':  ['Cardio / Deportes']
 };
 
 function getMuscleCategories(muscleGroup) {
@@ -173,8 +175,9 @@ function getMuscleColor(muscle) {
     // Core
     'Abdominales':                   '#14B8A6', // teal
     'Lumbares':                      '#0EA5E9', // celeste
-    // Cardio
+    // Cardio y Combate
     'Cardio':                        '#F43F5E', // rosa fuerte
+    'Cardio / Deportes':             '#EAB308', // amarillo dorado
   };
   // Si el nombre exacto no existe, usar paleta de fallback para grupos custom
   if (colors[muscle]) return colors[muscle];

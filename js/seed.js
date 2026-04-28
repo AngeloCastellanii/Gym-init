@@ -274,7 +274,24 @@ const SEED_EXERCISES = [
 
   { id:'ex_ant_05', name:'Muertos Colgados en Barra',    muscleGroup:'Antebrazos',             equipment:'Barra',      difficulty:'Principiante',
     description:'Simplemente cuelga de una barra de dominadas durante el máximo tiempo posible. Desarrolla el agarre y los antebrazos.',
-    tips:'Usa el tiempo bajo tensión como métrica de progresión. Varía entre agarre supino y prono.' }
+    tips:'Usa el tiempo bajo tensión como métrica de progresión. Varía entre agarre supino y prono.' },
+
+  // ── DEPORTES Y COMBATE ─────────────────────────────────
+  { id:'ex_dep_01', name:'Saco de Boxeo',                muscleGroup:'Cardio / Deportes',      equipment:'Saco',       difficulty:'Principiante',
+    description:'Trabajo de golpeo en saco pesado. Mejora la resistencia cardiovascular, la técnica y la fuerza explosiva.',
+    tips:'Mantén siempre la guardia arriba. Anota los minutos en TIEMPO y los asaltos en ROUNDS.' },
+
+  { id:'ex_dep_02', name:'Boxeo (Sparring / Sombra)',    muscleGroup:'Cardio / Deportes',      equipment:'Sin equipo', difficulty:'Intermedio',
+    description:'Práctica de boxeo ya sea sombra o combate con compañero. Enfoque en movimiento, esquivas y combinaciones.',
+    tips:'Registra los minutos totales de trabajo o el tiempo por asalto.' },
+
+  { id:'ex_dep_03', name:'BJJ - Roladas / Sparring',     muscleGroup:'Cardio / Deportes',      equipment:'Tatami',     difficulty:'Intermedio',
+    description:'Práctica libre de Jiu-Jitsu Brasileño. Lucha de sumisión con compañero.',
+    tips:'Anota el tiempo total en la primera columna. Usa RPE para medir la intensidad promedio.' },
+
+  { id:'ex_dep_04', name:'BJJ - Drills',                 muscleGroup:'Cardio / Deportes',      equipment:'Tatami',     difficulty:'Principiante',
+    description:'Perfeccionamiento técnico de transiciones y sumisiones.',
+    tips:'Anota el tiempo empleado en practicar la técnica repetitivamente.' }
 ];
 
 // ─────────────────────────────────────────────────────────────
