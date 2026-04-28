@@ -101,7 +101,19 @@ function calcTotalVolume(logs) {
   if (!logs) return 0;
   return logs.reduce((total, exLog) => {
     const exVolume = exLog.sets.reduce((setSum, s) => {
-      if (s.done) return setSum + (Number(s.weight) * Number(s.reps));
+      if (s.done) {
+        let weight = Number(s.weight) || 0;
+        const setUnit = s.unit || currentUnit; // si no hay unidad, asume la global
+        
+        // Conversión si la unidad del set no coincide con la global
+        if (setUnit === 'lb' && currentUnit === 'kg') {
+          weight = weight * 0.453592;
+        } else if (setUnit === 'kg' && currentUnit === 'lb') {
+          weight = weight * 2.20462;
+        }
+        
+        return setSum + (weight * Number(s.reps));
+      }
       return setSum;
     }, 0);
     return total + exVolume;

@@ -634,7 +634,7 @@ class ActiveSessionView extends HTMLElement {
           <!-- Cabecera columnas -->
           <div style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; padding:10px 0 6px; border-bottom:1px solid var(--border);">
             <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">#</span>
-            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">${unitLabel()}</span>
+            <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">PESO</span>
             <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">REPS</span>
             <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">RPE</span>
             <span style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; text-align:center;">✓</span>
@@ -654,15 +654,26 @@ class ActiveSessionView extends HTMLElement {
 
   _renderSetRow(exIdx, setIdx, s) {
     const isDone = s.done;
+    const currentSetUnit = s.unit || (typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg');
     const inputStyle = `height:42px; text-align:center; background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); font-weight:700; border-radius:8px; font-size:14px; width:100%;`;
     return `
       <div class="set-row ${isDone ? 'done' : ''}" style="display:grid; grid-template-columns:28px 1fr 1fr 52px 44px 44px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
         <span style="text-align:center; font-weight:800; color:${isDone ? 'var(--success)' : 'var(--text-muted)'}; font-size:13px;">${setIdx + 1}</span>
-        <input type="number" inputmode="decimal" value="${s.weight}" class="form-input input-numeric"
-          style="${inputStyle} ${isDone ? 'opacity:0.5;' : ''}"
-          onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)"
-          onkeydown="if(event.key==='Enter') this.blur()"
-          ${isDone ? 'disabled' : ''}>
+        
+        <div style="position:relative; width:100%; display:flex; align-items:center;">
+          <input type="number" inputmode="decimal" value="${s.weight}" class="form-input input-numeric"
+            style="${inputStyle} padding-right:28px; ${isDone ? 'opacity:0.5;' : ''}"
+            onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'weight',this.value)"
+            onkeydown="if(event.key==='Enter') this.blur()"
+            ${isDone ? 'disabled' : ''}>
+          <button class="unit-toggle-btn" 
+            onclick="this.closest('active-session-view')._toggleUnit(${exIdx},${setIdx})" 
+            ${isDone ? 'disabled' : ''}
+            style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:var(--bg-panel); border:1px solid var(--border); color:var(--text-secondary); font-size:9px; font-weight:800; padding:2px 4px; border-radius:4px; cursor:pointer; text-transform:uppercase; transition:all 0.2s;">
+            ${currentSetUnit}
+          </button>
+        </div>
+
         <input type="number" inputmode="decimal" value="${s.reps}" class="form-input input-numeric"
           style="${inputStyle} ${isDone ? 'opacity:0.5;' : ''}"
           onchange="this.closest('active-session-view')._updVal(${exIdx},${setIdx},'reps',this.value)"
@@ -746,7 +757,12 @@ class ActiveSessionView extends HTMLElement {
 
   _addSet(ei) {
     const last = this._logs[ei].sets.slice(-1)[0];
-    this._logs[ei].sets.push({ weight: last ? last.weight : 0, reps: last ? last.reps : 10, done: false });
+    this._logs[ei].sets.push({ 
+      weight: last ? last.weight : 0, 
+      reps:   last ? last.reps : 10, 
+      unit:   last ? last.unit : (typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg'),
+      done:   false 
+    });
     this._saveState();
     const container = this.querySelector(`#ex-${ei}-sets`);
     if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
@@ -754,6 +770,14 @@ class ActiveSessionView extends HTMLElement {
 
   _delSet(ei, si) {
     this._logs[ei].sets.splice(si, 1);
+    this._saveState();
+    const container = this.querySelector(`#ex-${ei}-sets`);
+    if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
+  }
+
+  _toggleUnit(ei, si) {
+    const current = this._logs[ei].sets[si].unit || (typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg');
+    this._logs[ei].sets[si].unit = current === 'kg' ? 'lb' : 'kg';
     this._saveState();
     const container = this.querySelector(`#ex-${ei}-sets`);
     if (container) container.innerHTML = this._logs[ei].sets.map((s, sIdx) => this._renderSetRow(ei, sIdx, s)).join('');
