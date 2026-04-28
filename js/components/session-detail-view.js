@@ -59,7 +59,7 @@ class SessionDetailView extends HTMLElement {
     // Verificamos si TODA la sesion fue de deportes
     const isOnlyDeporte = this._session.logs.every(log => {
       const ex = exercises.find(e => e.id === log.exerciseId);
-      return ex && ex.muscleGroup === 'Cardio / Deportes';
+      return (ex && ex.muscleGroup === 'Cardio / Deportes') || log.muscleGroup === 'Cardio / Deportes';
     });
     
     this.innerHTML = `
@@ -147,8 +147,8 @@ class SessionDetailView extends HTMLElement {
         <div style="display:flex; flex-direction:column; gap:20px;">
           ${this._session.logs.map((log, i) => {
             const exInfo = exercises.find(e => e.id === log.exerciseId);
-            const name = exInfo ? exInfo.name : 'Ejercicio';
-            const isDeporte = exInfo && exInfo.muscleGroup === 'Cardio / Deportes';
+            const name = exInfo ? exInfo.name : (log.exerciseName || 'Ejercicio');
+            const isDeporte = (exInfo && exInfo.muscleGroup === 'Cardio / Deportes') || log.muscleGroup === 'Cardio / Deportes';
             
             return `
               <div class="glass-card view-enter" style="padding:0; overflow:hidden;">

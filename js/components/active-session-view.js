@@ -98,6 +98,9 @@ class ActiveSessionView extends HTMLElement {
     } else if (state.phase === 'active-free') {
       this._renderFreeActive();
       this._startFreeTimer();
+    } else if (state.phase === 'active-sport') {
+      this._renderSportActive();
+      this._startSessionTimer();
     } else {
       this._renderSetup();
     }
@@ -187,16 +190,18 @@ class ActiveSessionView extends HTMLElement {
       <div class="view-content" style="max-width:520px; margin:0 auto;">
 
         <!-- Selector de modo -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:32px;">
-          <div class="glass-card mode-card active-mode" id="mode-routine" style="padding:24px; text-align:center; cursor:pointer; border:2px solid var(--accent); transition:all 0.2s;">
-            <i class="ph-fill ph-barbell" style="font-size:36px; color:var(--accent-light); margin-bottom:10px;"></i>
-            <h3 style="font-size:15px; font-weight:800; color:#FFF;">Con Rutina</h3>
-            <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Series, pesos y repeticiones</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:32px;">
+          <div class="glass-card mode-card active-mode" id="mode-routine" style="padding:20px 10px; text-align:center; cursor:pointer; border:2px solid var(--accent); transition:all 0.2s;">
+            <i class="ph-fill ph-barbell" style="font-size:32px; color:var(--accent-light); margin-bottom:10px;"></i>
+            <h3 style="font-size:13px; font-weight:800; color:#FFF;">Pesas</h3>
           </div>
-          <div class="glass-card mode-card" id="mode-free" style="padding:24px; text-align:center; cursor:pointer; border:2px solid transparent; transition:all 0.2s;">
-            <i class="ph-fill ph-timer" style="font-size:36px; color:var(--text-muted); margin-bottom:10px;"></i>
-            <h3 style="font-size:15px; font-weight:800; color:var(--text-secondary);">Sesion Libre</h3>
-            <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Cardio, deporte o actividad libre</p>
+          <div class="glass-card mode-card" id="mode-sport" style="padding:20px 10px; text-align:center; cursor:pointer; border:2px solid transparent; transition:all 0.2s;">
+            <i class="ph-fill ph-person-simple-run" style="font-size:32px; color:var(--text-muted); margin-bottom:10px;"></i>
+            <h3 style="font-size:13px; font-weight:800; color:var(--text-secondary);">Deporte</h3>
+          </div>
+          <div class="glass-card mode-card" id="mode-free" style="padding:20px 10px; text-align:center; cursor:pointer; border:2px solid transparent; transition:all 0.2s;">
+            <i class="ph-fill ph-timer" style="font-size:32px; color:var(--text-muted); margin-bottom:10px;"></i>
+            <h3 style="font-size:13px; font-weight:800; color:var(--text-secondary);">Libre</h3>
           </div>
         </div>
 
@@ -208,19 +213,31 @@ class ActiveSessionView extends HTMLElement {
           </select>
         </div>
 
-        <!-- Panel Libre -->
-        <div id="panel-free" style="display:none;">
+        <!-- Panel Deporte -->
+        <div id="panel-sport" style="display:none;">
           <div class="form-group">
-            <label class="form-label">Nombre de la actividad</label>
-            <input class="form-input" id="free-name" placeholder="Ej: Correr 5km, Futbol, HIIT..." style="background:#1E293B; color:#FFF; margin-top:8px;">
+            <label class="form-label">¿Qué deporte vas a practicar?</label>
+            <input class="form-input" id="sport-name" placeholder="Ej: Jiu Jitsu, Boxeo, Natación..." style="background:#1E293B; color:#FFF; margin-top:8px;">
           </div>
           <div class="form-group" style="margin-top:16px;">
-            <label class="form-label">Notas (opcional)</label>
-            <textarea class="form-textarea" id="free-notes" placeholder="Distancia, intensidad, como te sentiste..." style="background:#1E293B; color:#FFF; min-height:80px; margin-top:8px;"></textarea>
+            <label class="form-label">Objetivo de la sesión (opcional)</label>
+            <input class="form-input" id="sport-objective" placeholder="Ej: Roladas intensas, técnica..." style="background:#1E293B; color:#FFF; margin-top:8px;">
           </div>
         </div>
 
-        <button class="btn btn-success" id="btn-start-session" style="width:100%; justify-content:center; padding:20px; font-size:17px; font-weight:800; margin-top:8px;">
+        <!-- Panel Libre -->
+        <div id="panel-free" style="display:none; margin-top:16px;">
+          <div class="form-group">
+            <label class="form-label">Nombre de la actividad</label>
+            <input class="form-input" id="free-name" placeholder="Ej: Correr 5km, Caminata..." style="background:#1E293B; color:#FFF; margin-top:8px;">
+          </div>
+          <div class="form-group" style="margin-top:16px;">
+            <label class="form-label">Notas (opcional)</label>
+            <textarea class="form-textarea" id="free-notes" placeholder="Distancia, intensidad..." style="background:#1E293B; color:#FFF; min-height:80px; margin-top:8px;"></textarea>
+          </div>
+        </div>
+
+        <button class="btn btn-success" id="btn-start-session" style="width:100%; justify-content:center; padding:20px; font-size:17px; font-weight:800; margin-top:24px;">
           <i class="ph-bold ph-play"></i> INICIAR SESION
         </button>
       </div>
@@ -228,6 +245,7 @@ class ActiveSessionView extends HTMLElement {
 
     this.querySelector('#mode-routine').addEventListener('click', () => this._setMode('routine'));
     this.querySelector('#mode-free').addEventListener('click',    () => this._setMode('free'));
+    this.querySelector('#mode-sport').addEventListener('click',   () => this._setMode('sport'));
     this.querySelector('#btn-start-session').addEventListener('click', () => this._startSession());
     this._populateRoutineSelector();
   }
@@ -248,27 +266,35 @@ class ActiveSessionView extends HTMLElement {
     this._mode = mode;
     const routineCard  = this.querySelector('#mode-routine');
     const freeCard     = this.querySelector('#mode-free');
+    const sportCard    = this.querySelector('#mode-sport');
     const panelRoutine = this.querySelector('#panel-routine');
     const panelFree    = this.querySelector('#panel-free');
+    const panelSport   = this.querySelector('#panel-sport');
+    const btnStart     = this.querySelector('#btn-start-session');
+
+    const setActive = (card, active) => {
+      card.style.borderColor = active ? 'var(--accent)' : 'transparent';
+      card.querySelector('i').style.color = active ? 'var(--accent-light)' : 'var(--text-muted)';
+      card.querySelector('h3').style.color = active ? '#FFF' : 'var(--text-secondary)';
+    };
+
+    setActive(routineCard, mode === 'routine');
+    setActive(freeCard, mode === 'free');
+    setActive(sportCard, mode === 'sport');
+
+    panelRoutine.style.display = mode === 'routine' ? 'block' : 'none';
+    panelFree.style.display    = mode === 'free' ? 'block' : 'none';
+    panelSport.style.display   = mode === 'sport' ? 'block' : 'none';
 
     if (mode === 'routine') {
-      routineCard.style.borderColor = 'var(--accent)';
-      routineCard.querySelector('i').style.color = 'var(--accent-light)';
-      routineCard.querySelector('h3').style.color = '#FFF';
-      freeCard.style.borderColor = 'transparent';
-      freeCard.querySelector('i').style.color = 'var(--text-muted)';
-      freeCard.querySelector('h3').style.color = 'var(--text-secondary)';
-      panelRoutine.style.display = 'block';
-      panelFree.style.display = 'none';
+      btnStart.className = 'btn btn-success';
+      btnStart.innerHTML = '<i class="ph-bold ph-play"></i> INICIAR RUTINA';
+    } else if (mode === 'sport') {
+      btnStart.className = 'btn btn-primary';
+      btnStart.innerHTML = '<i class="ph-bold ph-person-simple-run"></i> INICIAR DEPORTE';
     } else {
-      freeCard.style.borderColor = 'var(--accent)';
-      freeCard.querySelector('i').style.color = 'var(--accent-light)';
-      freeCard.querySelector('h3').style.color = '#FFF';
-      routineCard.style.borderColor = 'transparent';
-      routineCard.querySelector('i').style.color = 'var(--text-muted)';
-      routineCard.querySelector('h3').style.color = 'var(--text-secondary)';
-      panelRoutine.style.display = 'none';
-      panelFree.style.display = 'block';
+      btnStart.className = 'btn btn-success';
+      btnStart.innerHTML = '<i class="ph-bold ph-play"></i> INICIAR SESION LIBRE';
     }
   }
 
@@ -283,6 +309,29 @@ class ActiveSessionView extends HTMLElement {
       this._saveState();
       this._renderFreeActive();
       this._startFreeTimer();
+    } else if (this._mode === 'sport') {
+      const sportName = this.querySelector('#sport-name').value.trim();
+      if (!sportName) return alert('Por favor, ingresa el nombre del deporte (ej: BJJ, Boxeo).');
+      
+      this._freeSessionName = sportName;
+      this._freeNotes = this.querySelector('#sport-objective').value.trim();
+      
+      // Crear un log virtual
+      this._logs = [{
+        exerciseId:    'virtual_sport',
+        exerciseName:  sportName,
+        muscleGroup:   'Cardio / Deportes',
+        exerciseImage: '',
+        lastData:      null,
+        sets: [{ weight: '', reps: 1, rpe: '', done: false }]
+      }];
+      
+      this._startTime = Date.now();
+      this._phase = 'active-sport';
+      this._currentExIdx = 0;
+      this._saveState();
+      this._renderSportActive();
+      this._startSessionTimer();
     } else {
       const id = this.querySelector('#session-routine-select').value;
       if (!id) return alert('Selecciona una rutina.');
@@ -419,6 +468,77 @@ class ActiveSessionView extends HTMLElement {
       window.location.hash = '#sessions';
     } catch (err) {
       console.error('Error al guardar sesion libre:', err);
+      alert('Error al guardar la sesion: ' + err.message);
+    }
+  }
+
+
+  // ======================================================
+  //  MODO DEPORTE (Fase Active Sport)
+  // ======================================================
+  _renderSportActive() {
+    this.innerHTML = `
+      <div class="page-header" style="align-items:flex-start;">
+        <div style="flex:1;">
+          <h1 class="page-title">${this._freeSessionName}</h1>
+          <p class="page-subtitle">Rastreo de Deporte en Vivo</p>
+          ${this._freeNotes ? `<p style="font-size:13px; color:var(--text-muted); margin-top:6px; font-style:italic;">${this._freeNotes}</p>` : ''}
+        </div>
+        <div style="text-align:right; background:rgba(128,128,128,0.08); padding:12px 20px; border-radius:14px; border:1px solid var(--border);">
+          <div class="chrono-display" id="session-timer" style="font-size:38px; letter-spacing:3px; color:var(--text-primary);">00:00</div>
+          <p style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:4px;">Tiempo Transcurrido</p>
+        </div>
+      </div>
+
+      <div class="view-content" style="max-width:520px; margin:0 auto;">
+        <div id="ex-0-sets-container" style="margin-bottom:24px;">
+           ${this._renderSetsContainer(0)}
+        </div>
+        
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-ghost" id="btn-cancel-sport" style="flex:1; justify-content:center; color:var(--danger-light);">
+             <i class="ph-bold ph-x"></i> Cancelar
+          </button>
+          <button class="btn btn-success" id="btn-finish-sport" style="flex:2; justify-content:center; padding:18px; font-size:16px; font-weight:800;">
+            <i class="ph-bold ph-flag-checkered"></i> FINALIZAR SESION
+          </button>
+        </div>
+      </div>
+    `;
+
+    this.querySelector('#btn-cancel-sport').addEventListener('click', () => {
+      if (confirm('Cancelar sesion de deporte? El progreso se perdera.')) {
+        this._clearState();
+        if (this._timerInterval) clearInterval(this._timerInterval);
+        window.location.hash = '#dashboard';
+      }
+    });
+
+    this.querySelector('#btn-finish-sport').addEventListener('click', () => {
+      if (!this._logs[0].sets[0].done) {
+         if(!confirm('Aún no has marcado la actividad como completada. ¿Quieres finalizar de todas formas?')) return;
+         this._logs[0].sets[0].done = true; // Marcar como listo si insiste
+      }
+      this._finishSport();
+    });
+  }
+
+  async _finishSport() {
+    const dur = Date.now() - this._startTime;
+    try {
+      await GymDB.sessions.add({
+        type:      'routine', // Lo guardamos como 'routine' para reutilizar la vista detallada
+        routineId: 'sport_session',
+        name:      this._freeSessionName, // Usamos el nombre del deporte como nombre principal
+        duration:  dur,
+        logs:      this._logs,
+        journal:   this._freeNotes
+      });
+      this._clearState();
+      if (this._timerInterval) clearInterval(this._timerInterval);
+      window.location.hash = '#sessions';
+    } catch (err) {
+      console.error('Error al guardar sesion de deporte:', err);
       alert('Error al guardar la sesion: ' + err.message);
     }
   }

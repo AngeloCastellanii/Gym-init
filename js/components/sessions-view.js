@@ -108,11 +108,24 @@ class SessionsView extends HTMLElement {
     }
 
     container.innerHTML = filtered.map(s => {
-      const isFree  = s.type === 'free';
-      const title   = isFree ? (s.name || 'Sesion Libre') : 'Entrenamiento Finalizado';
-      const icon    = isFree ? 'ph-timer' : 'ph-check-circle';
-      const iconClr = isFree ? 'var(--success-light)' : 'var(--accent-light)';
-      const vol     = !isFree ? `${displayWeight(calcTotalVolume(s.logs))} ${unitLabel()}` : null;
+      const isFree   = s.type === 'free';
+      const isSport  = s.routineId === 'sport_session';
+      
+      let title = 'Entrenamiento Finalizado';
+      let icon = 'ph-check-circle';
+      let iconClr = 'var(--accent-light)';
+      
+      if (isFree) {
+        title = s.name || 'Sesion Libre';
+        icon = 'ph-timer';
+        iconClr = 'var(--success-light)';
+      } else if (isSport) {
+        title = s.name || 'Sesion de Deporte';
+        icon = 'ph-person-simple-run';
+        iconClr = 'var(--primary)'; // Si no existe, usamos algo distinto
+      }
+      
+      const vol = (!isFree && !isSport) ? `${displayWeight(calcTotalVolume(s.logs))} ${unitLabel()}` : null;
 
       return `
         <div class="glass-card hover-lift session-row">
@@ -128,8 +141,9 @@ class SessionsView extends HTMLElement {
             <div class="session-row-meta">
               ${vol ? `<span><i class="ph ph-barbell"></i> ${vol}</span>` : ''}
               <span><i class="ph ph-clock"></i> ${formatDuration(s.duration)}</span>
-              ${!isFree ? `<span><i class="ph ph-list-checks"></i> ${(s.logs||[]).length} ejercicios</span>` : ''}
+              ${(!isFree && !isSport) ? `<span><i class="ph ph-list-checks"></i> ${(s.logs||[]).length} ejercicios</span>` : ''}
               ${isFree ? `<span class="badge badge-success" style="font-size:9px; padding:3px 8px;">LIBRE</span>` : ''}
+              ${isSport ? `<span class="badge badge-primary" style="font-size:9px; padding:3px 8px; background:var(--primary); color:#FFF;">DEPORTE</span>` : ''}
               ${s.journal ? `<span style="display:inline-flex; align-items:center; gap:4px; color:var(--accent-light); font-size:11px; font-weight:600;"><i class="ph-bold ph-note-pencil" style="font-size:11px;"></i> Diario</span>` : ''}
             </div>
           </div>
