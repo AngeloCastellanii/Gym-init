@@ -99,9 +99,17 @@ function displayWeight(val) {
 }
 
 // --- Calculos de Entrenamiento ---
-function calcTotalVolume(logs) {
+function calcTotalVolume(logs, exercises = []) {
   if (!logs) return 0;
   return logs.reduce((total, exLog) => {
+    // Si tenemos la info de los ejercicios, no sumamos deportes
+    if (exercises.length > 0) {
+      const exInfo = exercises.find(e => e.id === exLog.exerciseId);
+      if (exInfo && exInfo.muscleGroup === 'Cardio / Deportes') {
+        return total;
+      }
+    }
+
     const exVolume = exLog.sets.reduce((setSum, s) => {
       if (s.done) {
         let weight = Number(s.weight) || 0;

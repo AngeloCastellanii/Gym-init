@@ -54,7 +54,13 @@ class SessionDetailView extends HTMLElement {
   }
 
   _renderDetail(exercises) {
-    const totalVolume = calcTotalVolume(this._session.logs);
+    const totalVolume = calcTotalVolume(this._session.logs, exercises);
+    
+    // Verificamos si TODA la sesion fue de deportes
+    const isOnlyDeporte = this._session.logs.every(log => {
+      const ex = exercises.find(e => e.id === log.exerciseId);
+      return ex && ex.muscleGroup === 'Cardio / Deportes';
+    });
     
     this.innerHTML = `
       <div class="page-header" style="align-items: flex-start;">
@@ -102,6 +108,7 @@ class SessionDetailView extends HTMLElement {
           </div>
         `})() : `
           <div class="kpi-grid" style="margin-bottom:32px;">
+            ${isOnlyDeporte ? '' : `
             <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
               <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Volumen Levantado</span>
               <div style="display:flex; align-items:baseline; gap:8px;">
@@ -109,6 +116,7 @@ class SessionDetailView extends HTMLElement {
                  <span style="font-size:16px; font-weight:700; color:var(--text-muted);">${unitLabel()}</span>
               </div>
             </div>
+            `}
             <div class="glass-card" style="padding:24px; display:flex; flex-direction:column; gap:8px;">
               <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">Tiempo Total</span>
               <div style="display:flex; align-items:baseline; gap:8px;">
@@ -140,6 +148,8 @@ class SessionDetailView extends HTMLElement {
           ${this._session.logs.map((log, i) => {
             const exInfo = exercises.find(e => e.id === log.exerciseId);
             const name = exInfo ? exInfo.name : 'Ejercicio';
+            const isDeporte = exInfo && exInfo.muscleGroup === 'Cardio / Deportes';
+            
             return `
               <div class="glass-card view-enter" style="padding:0; overflow:hidden;">
                 <div style="padding:16px 24px; background:rgba(128,128,128,0.05); border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
@@ -150,15 +160,16 @@ class SessionDetailView extends HTMLElement {
                       ${exInfo && exInfo.muscleGroup ? `<span style="font-size:11px; color:var(--text-muted);">${exInfo.muscleGroup}</span>` : ''}
                     </div>
                   </div>
-                  <span class="badge badge-slate">${log.sets.length} series</span>
+                  <span class="badge badge-slate">${log.sets.length} ${isDeporte ? 'rounds' : 'series'}</span>
                 </div>
                 <div style="padding:16px 24px;">
                    <table style="width:100%; border-collapse:collapse;">
                      <thead>
                        <tr style="text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border);">
-                         <th style="padding:10px 0;">Set</th>
-                         <th style="padding:10px 0;">Peso (${unitLabel()})</th>
-                         <th style="padding:10px 0;">Reps</th>
+                         <th style="padding:10px 0;">#</th>
+                         <th style="padding:10px 0;">${isDeporte ? 'TIEMPO (MIN)' : 'PESO (' + unitLabel() + ')'}</th>
+                         <th style="padding:10px 0;">${isDeporte ? 'ROUNDS' : 'REPS'}</th>
+
                          <th style="padding:10px 0;">RPE</th>
                          <th style="padding:10px 0; text-align:right;">Estado</th>
                        </tr>
@@ -167,7 +178,7 @@ class SessionDetailView extends HTMLElement {
                        ${log.sets.map((s, si) => `
                          <tr style="border-bottom:1px solid var(--border-subtle);">
                            <td style="padding:12px 0; font-weight:800; color:var(--text-muted); font-size:13px;">${si+1}</td>
-                           <td style="padding:12px 0; font-weight:700; color:var(--text-primary); font-size:15px;">${displayWeight(s.weight)}</td>
+                           <td style="padding:12px 0; font-weight:700; color:var(--text-primary); font-size:15px;">${isDeporte ? s.weight : displayWeight(s.weight)}</td>
                            <td style="padding:12px 0; font-weight:700; color:var(--text-primary); font-size:15px;">${s.reps}</td>
                            <td style="padding:12px 0; font-weight:700; color:var(--accent-light); font-size:13px;">${s.rpe ? s.rpe : '—'}</td>
                            <td style="padding:12px 0; text-align:right;">
