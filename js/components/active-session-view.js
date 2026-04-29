@@ -319,7 +319,7 @@ class ActiveSessionView extends HTMLElement {
       // Crear un log virtual
       this._logs = [{
         exerciseId:    'virtual_sport',
-        exerciseName:  sportName,
+        exerciseName:  '', // Vacío para que el placeholder indique poner la sub-actividad
         muscleGroup:   'Cardio / Deportes',
         exerciseImage: '',
         lastData:      null,
@@ -491,9 +491,18 @@ class ActiveSessionView extends HTMLElement {
       </div>
 
       <div class="view-content" style="max-width:520px; margin:0 auto;">
-        <div id="ex-0-sets-container" style="margin-bottom:24px;">
-           ${this._renderSetsContainer(0)}
+        <div id="sport-activities-list">
+          ${this._logs.map((log, index) => `
+            <div id="ex-${index}-sets-container" style="margin-bottom:24px; position:relative;">
+               ${index > 0 ? `<button onclick="this.closest('active-session-view')._removeSportLog(${index})" style="position:absolute; top:-10px; right:-10px; background:var(--danger); color:#FFF; border:none; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10;"><i class="ph-bold ph-x"></i></button>` : ''}
+               ${this._renderSetsContainer(index)}
+            </div>
+          `).join('')}
         </div>
+        
+        <button class="btn btn-ghost" onclick="this.closest('active-session-view')._addSportLog()" style="width:100%; justify-content:center; border:1px dashed var(--border); margin-bottom:24px; height:48px;">
+          <i class="ph-bold ph-plus-circle"></i> Agregar Nueva Actividad
+        </button>
         
         <div style="display:flex; gap:12px;">
           <button class="btn btn-ghost" id="btn-cancel-sport" style="flex:1; justify-content:center; color:var(--danger-light);">
@@ -515,12 +524,45 @@ class ActiveSessionView extends HTMLElement {
     });
 
     this.querySelector('#btn-finish-sport').addEventListener('click', () => {
-      if (!this._logs[0].sets[0].done) {
-         if(!confirm('Aún no has marcado la actividad como completada. ¿Quieres finalizar de todas formas?')) return;
-         this._logs[0].sets[0].done = true; // Marcar como listo si insiste
+      const uncompleted = this._logs.filter(l => !l.sets[0].done);
+      if (uncompleted.length > 0) {
+         if(!confirm(`Aún tienes ${uncompleted.length} actividad(es) sin marcar como completadas. ¿Quieres finalizar y marcarlas como listas?`)) return;
+         uncompleted.forEach(l => l.sets[0].done = true);
       }
       this._finishSport();
     });
+  }
+
+  _addSportLog() {
+    this._logs.push({
+      exerciseId:    'virtual_sport_' + Date.now(),
+      exerciseName:  '',
+      muscleGroup:   'Cardio / Deportes',
+      exerciseImage: '',
+      lastData:      null,
+      sets: [{ weight: '', reps: 1, rpe: '', done: false }]
+    });
+    this._saveState();
+    this._renderSportActive();
+  }
+
+  _removeSportLog(idx) {
+    if(confirm('Eliminar esta actividad?')) {
+      this._logs.splice(idx, 1);
+      this._saveState();
+      this._renderSportActive();
+    }
+  }
+
+  _updSportName(idx, val) {
+    this._logs[idx].exerciseName = val;
+    this._saveState();
+  }
+
+  _toggleSportSet(ei, si) {
+    this._logs[ei].sets[si].done = !this._logs[ei].sets[si].done;
+    this._saveState();
+    this._renderSportActive();
   }
 
   async _finishSport() {
@@ -769,7 +811,10 @@ class ActiveSessionView extends HTMLElement {
       const s = log.sets[0];
       return `
          <div style="background:var(--bg-card); border:1px solid ${s.done ? 'var(--success)' : 'var(--border)'}; border-radius:12px; padding:20px; text-align:center; margin-top:10px; transition:border 0.2s;">
-            <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">${s.done ? '¡Actividad Registrada!' : 'Registra tu actividad total'}</p>
+            <input type="text" class="form-input" value="${log.exerciseName || ''}" placeholder="Nombre de la actividad (ej: Drills)" ${s.done ? 'disabled' : ''}
+               style="width:100%; text-align:center; font-size:15px; font-weight:800; background:transparent; border:none; border-bottom:1px dashed var(--border); border-radius:0; padding:4px 0; margin-bottom:16px; color:var(--text-primary);"
+               onchange="this.closest('active-session-view')._updSportName(${exIdx}, this.value)">
+            
             <div style="display:flex; gap:12px; justify-content:center; margin-bottom:20px;">
               <div style="flex:1;">
                 <label style="display:block; font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Tiempo Total (Min)</label>
@@ -794,7 +839,7 @@ class ActiveSessionView extends HTMLElement {
               </div>
             </div>
             <button class="btn ${s.done ? 'btn-success' : 'btn-primary'}" style="width:100%; justify-content:center; height:48px; font-size:14px; font-weight:800;"
-              onclick="this.closest('active-session-view')._toggleSet(${exIdx}, 0)">
+              onclick="this.closest('active-session-view')._toggleSportSet(${exIdx}, 0)">
               <i class="ph-bold ${s.done ? 'ph-check' : 'ph-flag'}"></i> 
               ${s.done ? 'ACTIVIDAD COMPLETADA' : 'MARCAR COMO COMPLETADO'}
             </button>
